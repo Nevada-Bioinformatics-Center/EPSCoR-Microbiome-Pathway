@@ -1,0 +1,12 @@
+.DS_Store
+.nextflow
+.nextflow.log
+.nextflow.log.*
+.RData
+.Rhistory
+.Rproj.user
+.vscode
+data
+work
+results
+
