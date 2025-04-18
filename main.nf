@@ -35,6 +35,7 @@ include { download_kneaddata_db } from './modules/KneadData/kneaddata_db.nf'
 //include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 
 
+
 /*
  * Pipeline structure
  * -------------------------------------------------------------
@@ -91,9 +92,32 @@ workflow  {
 
     //Channel.fromPath( params.humann_db, checkIfExists: true ).set { humann_DB }
 
-    db_combinations = params.kneaddata_db
+    def valid_db_options = [
+        "human_genome"       : ["bowtie2", "bmtagger"],
+        "human_transcriptome": ["bowtie2"],
+        "ribosomal_RNA"      : ["bowtie2"],
+        "mouse_C57BL"        : ["bowtie2"],
+        "dog_genome"         : ["bowtie2"],
+        "cat_genome"         : ["bowtie2"]
+    ]
+
+    def db_combinations = params.kneaddata_db
         .split(',')
-        .collect { it.tokenize(':') }  // Split each into [db, build]
+        .collect { it.tokenize(':') } // Split each into [db, build]
+
+    // Validate each combination
+    db_combinations.each { entry ->
+        if (entry.size() != 2) {
+            exit 1, "❌ Invalid kneaddata_db entry: '${entry.join(':')}'. Must be in format: <db>:<build>"
+        }
+        def (db, build) = entry
+        if (!valid_db_options.containsKey(db)) {
+            exit 1, "❌ Unknown database: '${db}'. Must be one of: ${valid_db_options.keySet().join(', ')}"
+        }
+        if (!(build in valid_db_options[db])) {
+            exit 1, "❌ Invalid build '${build}' for database '${db}'. Allowed builds: ${valid_db_options[db].join(', ')}"
+        }
+    }
 
     Channel
         .fromList(db_combinations)
