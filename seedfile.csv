@@ -1,3 +1,3 @@
 sampleID,read1,read2
-GLDS-286_5726,/Users/kanishkamanna/Documents/Sandbox/Projects/Microbiome/data/OSD-286/GLDS-286_5726_S10_L003_R1_001_HRremoved.fastq.gz,/Users/kanishkamanna/Documents/Sandbox/Projects/Microbiome/data/OSD-286/GLDS-286_5726_S10_L003_R2_001_HRremoved.fastq.gz
-GLDS-286_5716,/Users/kanishkamanna/Documents/Sandbox/Projects/Microbiome/data/OSD-286/GLDS-286_5716_S8_L003_R1_001_HRremoved.fastq.gz,/Users/kanishkamanna/Documents/Sandbox/Projects/Microbiome/data/OSD-286/GLDS-286_5716_S8_L003_R2_001_HRremoved.fastq.gz
+GLDS-286_5726,/mypool/projects/nasa_pipeline/data/GLDS-286_metagenomics_5726_S10_L003_R1_001_HRremoved.fastq.gz,/mypool/projects/nasa_pipeline/data/GLDS-286_metagenomics_5726_S10_L003_R2_001_HRremoved.fastq.gz
+GLDS-286_5716,/mypool/projects/nasa_pipeline/data/GLDS-286_metagenomics_5716_S8_L003_R1_001_HRremoved.fastq.gz,/mypool/projects/nasa_pipeline/data/GLDS-286_metagenomics_5716_S8_L003_R2_001_HRremoved.fastq.gz
