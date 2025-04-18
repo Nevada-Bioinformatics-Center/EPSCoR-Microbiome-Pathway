@@ -1,0 +1,11 @@
+name: biobakery
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::gffutils=0.9
+  - bioconda::kneaddata=0.12.2
+  - bioconda::metaphlan=4.1.1
+  - bioconda::humann=3.9
+  - bioconda::fastqc=0.12.1
+  - bioconda::multiqc=1.28
