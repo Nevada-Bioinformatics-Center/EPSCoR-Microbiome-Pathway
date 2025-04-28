@@ -1,5 +1,5 @@
 #! /usr/bin/env nextflow
-import java.nio.file.Paths
+//import java.nio.file.Paths
 
 // To use DSL 2 will need to include this
 nextflow.enable.dsl = 2
@@ -28,10 +28,10 @@ nextflow.enable.dsl = 2
  */
 // Import processes or subworkflows to be run in the pipeline
 // Each of these is a separate .nf script saved in modules/ directory
-include { QUALITY_CONTROL } from './modules/FastQC/fastqc.nf'
+
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { download_kneaddata_db } from './modules/KneadData/kneaddata_db.nf'
-//include { TAXONOMIC_PROFILING } from './modules/MetaPhlAn/metaphlan.nf'
+include { TAXONOMIC_PROFILING } from './modules/MetaPhlAn/metaphlan.nf'
 //include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 
 
@@ -54,12 +54,9 @@ workflow  {
         exit 0
     }
 
-    if (!params.samplesheet) {
-        exit 1, "Please provide a samplesheet using --samplesheet"
-    }
-
+    // Check if samplesheet is specified
     if (!file(params.samplesheet).exists()) {
-        exit 1, "Cannot find sample-sheet at ${params.samplesheet}"
+        exit 1, "Cannot find sample-sheet at ${params.samplesheet}! Please provide a --samplesheet!"
     }
 
     // If the library input was not specified
@@ -82,11 +79,10 @@ workflow  {
 
     }
 
-    samples_ch.view() // check the paired ends to test the output, remove this once the testing is completed
+    //samples_ch.view() // check the paired ends to test the output, remove this once the testing is completed
 
 
     // Make a channel with the reference database specified by the user
-    //Channel.fromPath( "${params.kneaddata_path}}", checkIfExists: true ).set { kneaddata_DB }
 
     //Channel.fromPath( params.metaphlan_db, checkIfExists: true ).set { metaphlan_DB }
 
@@ -126,13 +122,17 @@ workflow  {
             tuple(db, build, outdir)
         }
         .set { db_inputs }
+
+
+
     /*
      * Pipeline processes
      */
-    //QUALITY_CONTROL ( samples_ch )
 
-
-    //download_output = download_kneaddata_db(db_inputs)
+    // --------------------------------------------
+    // Step 1: Quality control and processing FASTQ 
+    //         paired-end reads with KneadData
+    // ---------------------------------------------
 
     // Run download
     download_kneaddata_db(db_inputs)
@@ -150,8 +150,8 @@ workflow  {
 
     kneading_inputs
         .map { sample_id, read, dbs ->
-            def out1 = Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq").toFile()
-            def out2 = Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq").toFile()
+            def out1 = java.nio.file.Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq").toFile()
+            def out2 = java.nio.file.Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq").toFile()
             def exists = out1.exists() && out2.exists()
 
             if (exists && !params.force) {
@@ -167,21 +167,43 @@ workflow  {
         .filter { sample_id, read, dbs, exists -> 
             return params.force || !exists
         }
-        .map { sample_id, read, dbs, _ -> tuple(sample_id, read, dbs) }
+        .map { sample_id, read, dbs, exists-> tuple(sample_id, read, dbs) }
         .set { kneading_inputs_filtered }
 
     kneading_inputs_filtered.view { it -> "🧪 KNEADDATA sample input: $it" }
 
     // Run KneadData
     KNEADING_DATA(kneading_inputs_filtered)
-    //KNEADING_DATA ( samples_ch , kneaddata_DB)
 
-    //TAXONOMIC_PROFILING ( KNEADING_DATA.out.fastq, metaphlan_DB )
-    //FUNCTIONAL_PROFILING ( KNEADING_DATA.out.fastq, humann_DB )
+    KNEADING_DATA.out.kneaddata_fastq
+                    .ifEmpty { exit 1, "❌ No output from KNEADING_DATA. Please check the input data or process configuration." }
+                    .collectFile(name: { it.sample_id + '.fastq' })
+                    .map { file ->
+                        def sample_id = file.getName().replace('.fastq', '')
+                        tuple (sample_id, file)
+                     }
+                    .set { merged_reads }
+
+
+    // -----------------------------------------
+    // Step 2: Profiling Taxonomy with MetaPhlAn
+    // -----------------------------------------
+    merged_reads.view{ "🧪 Merged reads for Taxonomy profiling: $it" }
+    TAXONOMIC_PROFILING ( merged_reads )
+
+
+    // ----------------------------------------
+    // Step 3: Functional Profiling with HUMAnN
+    // ----------------------------------------
+    merged_reads.view{ "🧪 Merged reads for Functional profiling: $it" }
+    //FUNCTIONAL_PROFILING ( KNEADING_DATA.out.fastq, humann_nucleotide_db, humann_protein_db, TAXONOMIC_PROFILING.out.profiled_taxa )
 
 
     /*
-     * Print pipeline execution summary
+     * Pipeline event handler
      */
-
 }
+
+
+
+// End of the Pipeline. Goodbye!
