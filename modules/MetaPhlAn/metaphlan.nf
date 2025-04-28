@@ -13,16 +13,23 @@ process TAXONOMIC_PROFILING {
 
     input:
         tuple val(sample_id), path(reads)
-        path(params.metaphlan_db)
 
     output:
-        path( "${sample_id}_taxa-profile.tsv" ),  emit: metaphlan_profile
+        path( "${sample_id}_profile.tsv" ),  emit: profile_taxa
+        path( "${sample_id}_metaphlan.log"), emit: metaphlan_log
 
     script:
     """
-    metaphlan $reads \\
-        --input_type fastq \\
-        --bowtie2db ${params.metaphlan_db} \\
-        --output_file ${sample_id}_profile.tsv
+    # Download MetaPhlAn database if not already present
+    # metaphlan --install --bowtie2db ${params.metaphlan_db}
+
+    # Run MetaPhlAn on the input reads
+    metaphlan \
+    ${reads} \
+    --input_type fastq \
+    --output_file ${sample_id}_profile.tsv \
+    --bowtie2out ${sample_id}_bowtie2.bz2 \
+    --nproc 4 \
+    &> ${sample_id}_metaphlan.log
     """
 }
