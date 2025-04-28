@@ -12,24 +12,28 @@ process FUNCTIONAL_PROFILING {
 
     input:
         tuple val(sample_id), path(reads)
-        path(params.humann_db)
+        path(params.humann_nucleotide_db)
+        path(params.humann_protein_db)
+        path(profiled_taxa)
+
 
     output:
         path( "${sample_id}/*_genefamilies.tsv" ),  emit: humann_genefamilies
         path( "${sample_id}/*_pathabundance.tsv" ), emit: humann_pathabundance
         path( "${sample_id}/*_pathcoverage.tsv" ),  emit: humann_pathcoverage
-        path( "${sample_id}/*_HUMANnN.log" ),       emit: humann_log
+        path( "${sample_id}/*_humann.log" ),    emit: humann_log
 
     script:
     """
     humann \\
         --input ${reads} \\
+        --input-format fastq \\
+        --nucleotide-database ${params.humann_nucleotide_db} \\
+        --protein-database ${params.humann_protein_db} \\
+        --taxonomic-profile ${profiled_taxa} \\
         --output ${sample_id}_humann_out \\
-        --output-prefix ${sample_id} \\
-        --database ${params.humann_db} \\
-        --sequencer-source ${params.sequencer_source} \\
-        --decontaminate-pairs ${params.decontaminate_pairs} \\
-        --remove-intermediate-output \\
-        --reorder
+        --output-basename ${sample_id} \\
+        --output-format tsv \\
+        --remove-temp-output
     """
 }
