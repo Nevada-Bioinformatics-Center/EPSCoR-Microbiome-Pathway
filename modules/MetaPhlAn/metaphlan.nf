@@ -8,21 +8,18 @@
 
 
 process TAXONOMIC_PROFILING {
-    tag "MetaPhlAn"
+    tag "MetaPhlAn: ${sample_id}"
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
     input:
         tuple val(sample_id), path(reads)
 
     output:
-        path( "${sample_id}_profile.tsv" ),  emit: profile_taxa
+        path( "${sample_id}_profile.tsv" ),  emit: profiled_taxa
         path( "${sample_id}_metaphlan.log"), emit: metaphlan_log
 
     script:
     """
-    # Download MetaPhlAn database if not already present
-    # metaphlan --install --bowtie2db ${params.metaphlan_db}
-
     # Run MetaPhlAn on the input reads
     metaphlan \
     ${reads} \

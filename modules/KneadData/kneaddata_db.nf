@@ -9,7 +9,7 @@
 
 process download_kneaddata_db {
 
-    tag "kneaddata_download_${database}_${build}"
+    tag "kneaddata_download: ${database};${build}"
 
     input:
     tuple val(database), val(build), val(install_dir)
