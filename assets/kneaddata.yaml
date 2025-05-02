@@ -1,0 +1,9 @@
+name: kneaddata
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+  - biobakery
+dependencies:
+  - biobakery::kneaddata=0.12.2
+  - bioconda::fastqc=0.12.1

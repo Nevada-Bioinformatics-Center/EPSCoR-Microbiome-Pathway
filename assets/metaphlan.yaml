@@ -1,0 +1,8 @@
+name: metaphlan
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+  - biobakery
+dependencies:
+  - bioconda::metaphlan=4.1.1

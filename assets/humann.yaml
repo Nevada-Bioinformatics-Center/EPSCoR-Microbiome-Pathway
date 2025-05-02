@@ -1,0 +1,8 @@
+name: humann
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+  - biobakery
+dependencies:
+  - biobakery::humann=3.9
