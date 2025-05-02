@@ -7,7 +7,7 @@
  */
 
 process KNEADING_DATA {
-    tag "KneadData"
+    tag "KneadData: ${sample_id}"
     publishDir "${params.output}/kneaddata_out", mode: 'copy'
 
     input:

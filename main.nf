@@ -32,7 +32,7 @@ nextflow.enable.dsl = 2
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { download_kneaddata_db } from './modules/KneadData/kneaddata_db.nf'
 include { TAXONOMIC_PROFILING } from './modules/MetaPhlAn/metaphlan.nf'
-//include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 
 
 
@@ -83,10 +83,8 @@ workflow  {
 
 
     // Make a channel with the reference database specified by the user
-
-    //Channel.fromPath( params.metaphlan_db, checkIfExists: true ).set { metaphlan_DB }
-
-    //Channel.fromPath( params.humann_db, checkIfExists: true ).set { humann_DB }
+    Channel.fromPath( params.nucleotide_db, checkIfExists: true ).set { nucleotide_db_ch }
+    Channel.fromPath( params.protein_db, checkIfExists: true ).set { protein_db_ch }
 
     def valid_db_options = [
         "human_genome"       : ["bowtie2", "bmtagger"],
@@ -191,12 +189,34 @@ workflow  {
     merged_reads.view{ "🧪 Merged reads for Taxonomy profiling: $it" }
     TAXONOMIC_PROFILING ( merged_reads )
 
+    //TAXONOMIC_PROFILING.out.profiled_taxa
+    //.map { file -> 
+    //    def sample_id = file.getName().replace('_profile.tsv', '') // Extract sample_id from file name
+    //    tuple(sample_id, file)
+    //}
+    //.set { profiled_taxa_mapped }
+
 
     // ----------------------------------------
     // Step 3: Functional Profiling with HUMAnN
     // ----------------------------------------
-    merged_reads.view{ "🧪 Merged reads for Functional profiling: $it" }
-    //FUNCTIONAL_PROFILING ( KNEADING_DATA.out.fastq, humann_nucleotide_db, humann_protein_db, TAXONOMIC_PROFILING.out.profiled_taxa )
+    
+    merged_reads.combine(TAXONOMIC_PROFILING.out.profiled_taxa)
+                .map { sample_id, reads, profiled_taxa -> 
+                    tuple(sample_id, reads, profiled_taxa)
+                }
+    .set { functional_inputs }
+    //merged_reads.combine(profiled_taxa_mapped)
+    //            .filter { merged, profiled_taxa -> 
+    //                merged[0] == profiled_taxa[0] // Match sample_id
+    //            }
+    //            .map { merged, profiled_taxa -> 
+    //                tuple(merged[0], merged[1], profiled_taxa[1]) // sample_id, reads, taxonomic_profile
+    //            }
+    //            .set { functional_inputs }
+    functional_inputs.view { "🧪 Functional profiling input: $it" }
+
+    FUNCTIONAL_PROFILING ( functional_inputs, nucleotide_db_ch, protein_db_ch )
 
 
     /*
