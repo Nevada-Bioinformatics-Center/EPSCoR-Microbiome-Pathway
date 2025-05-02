@@ -18,34 +18,38 @@ Sample Type: Paired-end
 
 ```
 nextflow main.nf \\
-            --samplesheet INPUT.csv \\
-            --output OUTPUT_DIR \\
+            --samplesheet path/to/INPUT.csv \\
+            --output /path/to/OUTPUT_DIR \\
             --library PE \\
+            --kneaddata_path /path/to/folder/kneaddata/database/download/ \\
             --kneaddata_db REFERENCE_DB \\
-            --decontaminate_pairs {strict, lenient, unpaired}
+            --nucleotide_db /path/to/downloaded/nucleotide/database \\
+            --protein_db /path/to/downloaded/protein/database \\
+            --pathway_db metacyc
 ```
 
 ## Parameter options
 
-`--samplesheet` : path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
+* `--samplesheet` : Absolute path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
 
-`--output` : path to the output directory where results will be saved.
+* `--output` : Absoulute path to the output directory where results will be saved.
 
-`--library` : sequencing library type, e.g., PE for paired-end or SE for single-end. (default: PE)
+* `--library` : sequencing library type, e.g., PE for paired-end or SE for single-end. (default: PE)
 
-`--kneaddata_db` : path to the KneadData reference database required for decontamination.
+* `--kneaddata_path` : Absolute path to saved or where to save knead_data databases (default: ./kneaddata_db/)
 
-`--decontaminate_pairs` : specify the decontamination mode, either 'strict', 'lenient' or 'unpaired'. (default: lenient)
+* `--kneaddata_db` : comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2) 
+    Possible options: 
+        `human_transcriptome:bowtie2`, `ribosomal_RNA:bowtie2`, `mouse_C57BL:bowtie2`, `dog_genome:bowtie2`, `cat_genome:bowtie2`, `human_genome:bmtagger`
 
-## Note
+        There currently is a bug in the current kneaddata v0.12.2 release of kneaddata for human_genome:bowtie2. This will be fixed in 0.12.3.
+        You can manually create the "human_genome_bowtie2" directory and manually download the correct file here 
+        https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz
 
-The pipeline is currently running till, QC step.
+        and extract it into the kneaddata_path/human_genome_bowtie2 directory. The within that directory run the following command: touch .done
+            
+* `--nucleotide_db` : Specify the directory containing the nucleotide database
 
-## Things to do
-
-1. Fix KneadData module - currently, KneadData is not able to call Bowtie2
-2. Add a database/reference module for KneadData, MetaPhlAn and HUMAnN
-3. Edit MetaPhlAn
-4. Edit HUMAnN
-5. Add Pathway analysis
-6. Add Visualization
+* `--protein_db` : Specify the directory containing the protein database
+            
+* `--pathway_db` : Specify the database to use for pathway {metacyc, unipathways} computations (default: metacyc)

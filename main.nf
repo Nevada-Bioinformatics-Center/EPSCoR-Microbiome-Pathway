@@ -38,6 +38,7 @@ include { DOWNLOAD_METPHLAN_DB } from './modules/MetaPhlAn/metaphlan.nf'
 
 
 
+
 /*
  * Pipeline structure
  * -------------------------------------------------------------
@@ -147,12 +148,14 @@ workflow  {
         .map { sample_id, read, dbs ->
             def out1 = file("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq")
             def out2 = file("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq")
+
             def exists = out1.exists() && out2.exists()
             tuple(sample_id, read, dbs, exists)
         }
         .set { kneaddata_status_ch }
 
     //kneading_inputs.view()
+
 
     kneaddata_status_ch
         .filter { sample_id, read, dbs, exists -> !exists || params.force }
@@ -174,6 +177,7 @@ workflow  {
         }
         .concat(KNEADING_DATA.out.kneaddata_fastq)
         .set { merged_reads }
+
 
 
     // -----------------------------------------

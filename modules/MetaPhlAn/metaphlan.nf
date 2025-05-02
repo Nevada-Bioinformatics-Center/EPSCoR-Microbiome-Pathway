@@ -33,7 +33,8 @@ process DOWNLOAD_METPHLAN_DB {
 }
 
 process TAXONOMIC_PROFILING {
-    tag { "MetaPhlAn: ${sample_id}" }  // ✅ correct way to defer interpolation
+
+    tag "MetaPhlAn: ${sample_id}"
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
 
@@ -56,5 +57,6 @@ process TAXONOMIC_PROFILING {
         --bowtie2out ${sample_id}_bowtie2.bz2 \\
         --nproc 4 \\
         &> ${sample_id}_metaphlan.log
+
     """
 }

@@ -7,7 +7,7 @@
  */
 
 process KNEADING_DATA {
-    tag "KneadData"
+    tag "KneadData: ${sample_id}"
     publishDir "${params.output}/kneaddata_out", mode: 'copy'
 
     input:
@@ -18,8 +18,6 @@ process KNEADING_DATA {
         path( "*.log" ),        emit: kneaddata_log
         path( "fastqc/${sample_id}*.html" ),        emit: kneaddata_fastqc_html
         path( "fastqc/${sample_id}*.zip" ),        emit: kneaddata_fastqc_zip
-
-
 
     script:
         def db_flags = kneaddata_db_paths.collect { "--reference-db ${it}" }.join(' ')
@@ -32,9 +30,10 @@ process KNEADING_DATA {
         ${db_flags} \
         --output  "./" \
         --output-prefix ${sample_id} \
-        --decontaminate-pairs ${params.decontaminate_pairs} \
         --run-fastqc-start \
         --run-fastqc-end \
+        --remove-intermediate-output \
+        --cat-final-output \
         --log ${sample_id}_kneaddata.log
         """
 }
