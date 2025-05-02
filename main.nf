@@ -1,5 +1,5 @@
 #! /usr/bin/env nextflow
-import java.nio.file.Paths
+//import java.nio.file.Paths
 
 // To use DSL 2 will need to include this
 nextflow.enable.dsl = 2
@@ -28,11 +28,13 @@ nextflow.enable.dsl = 2
  */
 // Import processes or subworkflows to be run in the pipeline
 // Each of these is a separate .nf script saved in modules/ directory
-include { QUALITY_CONTROL } from './modules/FastQC/fastqc.nf'
+
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { download_kneaddata_db } from './modules/KneadData/kneaddata_db.nf'
-//include { TAXONOMIC_PROFILING } from './modules/MetaPhlAn/metaphlan.nf'
-//include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
+include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { DOWNLOAD_METPHLAN_DB } from './modules/MetaPhlAn/metaphlan.nf'
+//include { COPY_METAPHLAN_DB } from './modules/MetaPhlAn/metaphlan.nf'
 
 
 
@@ -54,12 +56,9 @@ workflow  {
         exit 0
     }
 
-    if (!params.samplesheet) {
-        exit 1, "Please provide a samplesheet using --samplesheet"
-    }
-
+    // Check if samplesheet is specified
     if (!file(params.samplesheet).exists()) {
-        exit 1, "Cannot find sample-sheet at ${params.samplesheet}"
+        exit 1, "Cannot find sample-sheet at ${params.samplesheet}! Please provide a --samplesheet!"
     }
 
     // If the library input was not specified
@@ -82,15 +81,12 @@ workflow  {
 
     }
 
-    samples_ch.view() // check the paired ends to test the output, remove this once the testing is completed
+    //samples_ch.view() // check the paired ends to test the output, remove this once the testing is completed
 
 
     // Make a channel with the reference database specified by the user
-    //Channel.fromPath( "${params.kneaddata_path}}", checkIfExists: true ).set { kneaddata_DB }
-
-    //Channel.fromPath( params.metaphlan_db, checkIfExists: true ).set { metaphlan_DB }
-
-    //Channel.fromPath( params.humann_db, checkIfExists: true ).set { humann_DB }
+    Channel.fromPath( params.nucleotide_db, checkIfExists: true ).set { nucleotide_db_ch }
+    Channel.fromPath( params.protein_db, checkIfExists: true ).set { protein_db_ch }
 
     def valid_db_options = [
         "human_genome"       : ["bowtie2", "bmtagger"],
@@ -126,13 +122,17 @@ workflow  {
             tuple(db, build, outdir)
         }
         .set { db_inputs }
+
+
+
     /*
      * Pipeline processes
      */
-    //QUALITY_CONTROL ( samples_ch )
 
-
-    //download_output = download_kneaddata_db(db_inputs)
+    // --------------------------------------------
+    // Step 1: Quality control and processing FASTQ 
+    //         paired-end reads with KneadData
+    // ---------------------------------------------
 
     // Run download
     download_kneaddata_db(db_inputs)
@@ -144,44 +144,99 @@ workflow  {
     // Combine reads + database
     samples_ch
         .combine(kneaddata_db_ch)
-        .set { kneading_inputs }
+        .map { sample_id, read, dbs ->
+            def out1 = file("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq")
+            def out2 = file("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq")
+            def exists = out1.exists() && out2.exists()
+            tuple(sample_id, read, dbs, exists)
+        }
+        .set { kneaddata_status_ch }
 
     //kneading_inputs.view()
 
-    kneading_inputs
-        .map { sample_id, read, dbs ->
-            def out1 = Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq").toFile()
-            def out2 = Paths.get("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq").toFile()
-            def exists = out1.exists() && out2.exists()
+    kneaddata_status_ch
+        .filter { sample_id, read, dbs, exists -> !exists || params.force }
+        .map    { sample_id, read, dbs, exists -> tuple(sample_id, read, dbs) }
+        .set    { kneaddata_inputs_filtered }
 
-            if (exists && !params.force) {
-                log.info "⏭️ Skipping ${sample_id} — output exists and --force not set"
-            } else if (exists && params.force) {
-                log.info "♻️ Rerunning ${sample_id} — output exists but --force is set"
-            } else {
-                log.info "✅ Will run ${sample_id} — output doesn't exist"
-            }
-
-            tuple(sample_id, read, dbs, exists)
-        }
-        .filter { sample_id, read, dbs, exists -> 
-            return params.force || !exists
-        }
-        .map { sample_id, read, dbs, _ -> tuple(sample_id, read, dbs) }
-        .set { kneading_inputs_filtered }
-
-    kneading_inputs_filtered.view { it -> "🧪 KNEADDATA sample input: $it" }
+    kneaddata_inputs_filtered.view { it -> "🧪 KNEADDATA sample input: $it" }
 
     // Run KneadData
-    KNEADING_DATA(kneading_inputs_filtered)
-    //KNEADING_DATA ( samples_ch , kneaddata_DB)
+    KNEADING_DATA(kneaddata_inputs_filtered)
 
-    //TAXONOMIC_PROFILING ( KNEADING_DATA.out.fastq, metaphlan_DB )
-    //FUNCTIONAL_PROFILING ( KNEADING_DATA.out.fastq, humann_DB )
+
+    kneaddata_status_ch
+        .filter { sample_id, read, dbs, exists -> exists && !params.force }
+        .map { sample_id, read, dbs, exists ->
+            def out1 = file("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq")
+            def out2 = file("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq")
+            tuple(sample_id, [out1, out2])
+        }
+        .concat(KNEADING_DATA.out.kneaddata_fastq)
+        .set { merged_reads }
+
+
+    // -----------------------------------------
+    // Step 2: Profiling Taxonomy with MetaPhlAn
+    // -----------------------------------------
+    // Create channel for MetaPhlAn DB path
+    Channel.value(params.metaphlan_dbpath).set { metaphlan_db_dir_ch }
+
+    // Download MetaPhlAn DB
+    DOWNLOAD_METPHLAN_DB(metaphlan_db_dir_ch)
+
+    DOWNLOAD_METPHLAN_DB.out.metaphlan_db_dir
+        .set { metaphlan_db_dir_out_ch }
+
+
+    // Combine sample reads with the MetaPhlAn database path
+    //merged_reads
+    //    .combine(DOWNLOAD_METPHLAN_DB.out.metaphlan_db)
+    //    .map { sample_id, reads, dbpath -> tuple(sample_id, reads, dbpath) }
+    //    .set { metaphlan_inputs }
+    merged_reads
+    .combine(metaphlan_db_dir_out_ch)
+    .map { sample_id, reads, db_dir -> tuple(sample_id, reads, db_dir) }
+    .set { metaphlan_inputs }
+
+    metaphlan_inputs.view { "🧪 MetaPhlAn input: $it" }
+    TAXONOMIC_PROFILING(metaphlan_inputs)
+
+    //TAXONOMIC_PROFILING.out.profiled_taxa
+    //.map { file -> 
+    //    def sample_id = file.getName().replace('_profile.tsv', '') // Extract sample_id from file name
+    //    tuple(sample_id, file)
+    //}
+    //.set { profiled_taxa_mapped }
+
+
+    // ----------------------------------------
+    // Step 3: Functional Profiling with HUMAnN
+    // ----------------------------------------
+    
+    merged_reads.combine(TAXONOMIC_PROFILING.out.profiled_taxa)
+                .map { sample_id, reads, profiled_taxa -> 
+                    tuple(sample_id, reads, profiled_taxa)
+                }
+    .set { functional_inputs }
+    //merged_reads.combine(profiled_taxa_mapped)
+    //            .filter { merged, profiled_taxa -> 
+    //                merged[0] == profiled_taxa[0] // Match sample_id
+    //            }
+    //            .map { merged, profiled_taxa -> 
+    //                tuple(merged[0], merged[1], profiled_taxa[1]) // sample_id, reads, taxonomic_profile
+    //            }
+    //            .set { functional_inputs }
+    functional_inputs.view { "🧪 Functional profiling input: $it" }
+
+    FUNCTIONAL_PROFILING ( functional_inputs, nucleotide_db_ch, protein_db_ch )
 
 
     /*
-     * Print pipeline execution summary
+     * Pipeline event handler
      */
-
 }
+
+
+
+// End of the Pipeline. Goodbye!
