@@ -7,9 +7,10 @@
  */
 
 
-process download_kneaddata_db {
+process DOWNLOAD_KNEADDATA_DB {
 
     tag "kneaddata_download: ${database};${build}"
+    label 'kneaddata_conda'
 
     input:
     tuple val(database), val(build), val(install_dir)

@@ -6,35 +6,10 @@
  * Date: 2025-04-11
  */
 
-process DOWNLOAD_METPHLAN_DB {
-    tag "metaphlan_db_download"
-
-    input:
-        val(install_dir)
-
-
-    output:
-        val(install_dir), emit: metaphlan_db_dir
-
-    script:
-    """
-    if [ ! -f ${install_dir}/.done ]; then
-        echo Downloading metaphlan database to ${install_dir}
-        mkdir -p ${install_dir}
-        export DEFAULT_DB_FOLDER=${install_dir}
-
-        metaphlan --install --force_download --bowtie2db ${install_dir} &> ${install_dir}/metaphlan_db.log
-        touch ${install_dir}/.done
-    else
-        echo "Database already exists at ${install_dir}, skipping download."
-    fi
-    
-    """
-}
-
 process TAXONOMIC_PROFILING {
 
     tag "MetaPhlAn: ${sample_id}"
+    label 'metaphlan_conda'
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
 
@@ -50,11 +25,10 @@ process TAXONOMIC_PROFILING {
     export DEFAULT_DB_FOLDER=${metaphlan_db_dir}
 
     metaphlan \\
-        ${reads[0]} ${reads[1]} \\
+        ${reads} \\
         --input_type fastq \\
         --bowtie2db \$DEFAULT_DB_FOLDER \\
         --output_file ${sample_id}_profile.tsv \\
-        --bowtie2out ${sample_id}_bowtie2.bz2 \\
         --nproc 4 \\
         &> ${sample_id}_metaphlan.log
 
