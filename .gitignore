@@ -8,5 +8,9 @@
 .vscode
 data
 database
+databases
+kneaddata_db
+metaphlan_db
+humann_db
 work
 results

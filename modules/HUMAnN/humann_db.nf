@@ -1,6 +1,6 @@
 /*
  * Module: HUMAnN
- * Description: This module downloads the nucleotide database for HUMAnN analysis.
+ * Description: This module downloads the nucleotide & protein databases for HUMAnN analysis.
  * Version: v3.9
  * Author: Kanishka Manna
  * Date: 2025-05-08
@@ -9,7 +9,9 @@
 process DOWNLOAD_HUMANN_NUCLEOTIDE_DB {
 
     tag "humann_database_download: ${nuc_database};${nuc_build}"
+
     label 'humann_conda'
+    label 'medium'
 
     input:
     tuple val(nuc_database), val(nuc_build), val(install_dir)
@@ -34,7 +36,9 @@ process DOWNLOAD_HUMANN_NUCLEOTIDE_DB {
 process DOWNLOAD_HUMANN_PROTEIN_DB {
 
     tag "humann_database_download: ${prot_database};${prot_build}"
+
     label 'humann_conda'
+    label 'medium'
 
     input:
     tuple val(prot_database), val(prot_build), val(install_dir)

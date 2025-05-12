@@ -1,6 +1,6 @@
 /*
  * Module: KneadData
- * Description: This module performs kneading of metagenomic data.
+ * Description: This module dowload database for kneading of metagenomic data.
  * Version: v0.12.2
  * Author: Hans Vasquez-Gross
  * Date: 2025-04-18
@@ -10,7 +10,9 @@
 process DOWNLOAD_KNEADDATA_DB {
 
     tag "kneaddata_download: ${database};${build}"
+
     label 'kneaddata_conda'
+    label 'medium'
 
     input:
     tuple val(database), val(build), val(install_dir)
