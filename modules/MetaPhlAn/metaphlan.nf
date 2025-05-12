@@ -9,9 +9,11 @@
 process TAXONOMIC_PROFILING {
 
     tag "MetaPhlAn: ${sample_id}"
-    label 'metaphlan_conda'
-    publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
+    label 'metaphlan_conda'
+    label 'high'
+
+    publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
     input:
         tuple val(sample_id), path(merged_fastq), path(metaphlan_db_dir)

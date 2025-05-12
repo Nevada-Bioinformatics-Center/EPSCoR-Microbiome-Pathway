@@ -8,6 +8,10 @@
 
 process FUNCTIONAL_PROFILING {
     tag "HUMAnN: ${sample_id}"
+
+    label 'humann_conda'
+    label 'high'
+    
     publishDir "${params.output}/humann_out", mode: 'copy'
 
     input:

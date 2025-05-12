@@ -8,7 +8,9 @@
 
 process DOWNLOAD_METPHLAN_DB {
     tag "metaphlan_db_download"
+    
     label 'metaphlan_conda'
+    label 'medium'
 
     input:
         val(install_dir)

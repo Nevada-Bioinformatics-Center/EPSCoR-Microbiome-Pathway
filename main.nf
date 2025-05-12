@@ -32,8 +32,9 @@ nextflow.enable.dsl = 2
 include { DOWNLOAD_KNEADDATA_DB } from './modules/KneadData/kneaddata_db.nf'
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { DOWNLOAD_METPHLAN_DB } from './modules/MetaPhlAn/metaphlan_db.nf'
-include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
-//include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
+//include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
+include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
+include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 //include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 
 
@@ -47,10 +48,12 @@ include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 workflow  {
 
     /*
-     * Input channels & parameters
+     *  Pipeline Logic
      */
-
-     // Show help message if the user specifies the `--help` flag
+    
+    /*
+        Show help message if the user specifies the `--help` flag
+    */
     if ( params.help ) {
         // Invoke the function above which prints the help message
         log.info params.help_message
@@ -58,15 +61,15 @@ workflow  {
         exit 0
     }
 
+    /*
+        ---------------------------------
+        Samplesheet: Parsing & Validation
+        ---------------------------------
+    */
     // Check if samplesheet is specified
     if (!file(params.samplesheet).exists()) {
         exit 1, "Cannot find sample-sheet at ${params.samplesheet}! Please provide a --samplesheet!"
-    }
-
-    if (!params.kneaddata_db) {
-        exit 1, "Please provide at least one --kneaddata_db in the format 'name:build'"
     }    
-
 
     // Parse the samplesheet and validate paired-end format
         samples_ch = Channel
@@ -82,14 +85,17 @@ workflow  {
 
 
     /*
-     * Pipeline processes
-     */
+        -----------------------------------------------------
+        Step 1: Quality Control & Processing paired-end FASTQ
+        -----------------------------------------------------
+    */
 
-    // --------------------------------------------
-    // Step 1: Quality control and processing FASTQ 
-    //         paired-end reads with KneadData
-    // ---------------------------------------------
+    // Check if `--kneaddata_db` parameter is provided
+    if (!params.kneaddata_db) {
+        exit 1, "Please provide at least one --kneaddata_db in the format 'name:build'"
+    }
 
+    // Valid Kneaddata database options
     def valid_db_options = [
         "human_genome"       : ["bowtie2", "bmtagger"],
         "human_transcriptome": ["bowtie2"],
@@ -103,7 +109,7 @@ workflow  {
         .split(',')
         .collect { it.tokenize(':') } // Split each into [db, build]
 
-    // Validate each combination
+    // Validate each combinations
     db_combinations.each { entry ->
         if (entry.size() != 2) {
             exit 1, "❌ Invalid kneaddata_db entry: '${entry.join(':')}'. Must be in format: <db>:<build>"
@@ -117,6 +123,7 @@ workflow  {
         }
     }
 
+    // Kneaddata database channel
     Channel
         .fromList(db_combinations)
         .map { db, build -> 
@@ -145,7 +152,7 @@ workflow  {
         }
         .set { kneaddata_status_ch }
 
-
+    // Final check for Kneaddata inputs
     kneaddata_status_ch
         .filter { _sample_id, _reads, _dbs, exists -> !exists || params.force }
         .map    { sample_id, read, dbs, _exists -> tuple(sample_id, read, dbs) }
@@ -166,35 +173,44 @@ workflow  {
     //    .concat(KNEADING_DATA.out.kneaddata_fastq)
     //    .set { merged_reads }
     
-    kneaddata_status_ch
-        .filter { _sample_id, _read, _dbs, exists -> exists && !params.force }
-        .map { sample_id, _read, _dbs, _exists ->
-            def out1 = file("${params.output}/kneaddata_out/${sample_id}.fastq")
-            tuple(sample_id, [out1])
-        }
-        .concat(KNEADING_DATA.out.kneaddata_fastq)
-        .set { merged_reads }
+    //kneaddata_status_ch
+    //    .filter { _sample_id, _read, _dbs, exists -> exists && !params.force }
+    //    .map { sample_id, _read, _dbs, _exists ->
+    //        def out1 = file("${params.output}/kneaddata_out/${sample_id}.fastq")
+    //        tuple(sample_id, [out1])
+    //    }
+    //    .concat(KNEADING_DATA.out.kneaddata_fastq)
+    //    .set { merged_reads }
+    
 
 
-    // -----------------------------------------
-    // Step 2: Profiling Taxonomy with MetaPhlAn
-    // -----------------------------------------
-    // Create channel for MetaPhlAn DB path
+    /*
+        --------------------------
+        Step 2: Taxonomy Profiling
+        --------------------------
+    */
+
+    // Channel for MetaPhlAn database path
     Channel.value(params.metaphlan_db_path).set { metaphlan_db_dir_ch }
 
-    // Download MetaPhlAn DB
+    // Download MetaPhlAn database
     DOWNLOAD_METPHLAN_DB(metaphlan_db_dir_ch)
 
     DOWNLOAD_METPHLAN_DB.out.metaphlan_db_dir
         .set { metaphlan_db_dir_out_ch }
 
-    merged_reads
-    .combine(metaphlan_db_dir_out_ch)
-    .map { sample_id, reads, db_dir -> tuple(sample_id, reads, db_dir) }
-    .set { metaphlan_inputs }
+    metaphlan_db_dir_out_ch.view {"$it"}
 
-    metaphlan_inputs.view { "🧪 MetaPhlAn input: $it" }
-    TAXONOMIC_PROFILING(metaphlan_inputs)
+    // Combine merged reads with MetaPhlAn database path
+    //merged_reads
+    //.combine(metaphlan_db_dir_out_ch)
+    //.map { sample_id, reads, db_dir -> tuple(sample_id, reads, db_dir) }
+    //.set { metaphlan_inputs }
+
+    //metaphlan_inputs.view { "🧪 MetaPhlAn input: $it" }
+
+    // Run MetaPhlAn for taxonomic profiling
+    //TAXONOMIC_PROFILING(metaphlan_inputs)
 
     //TAXONOMIC_PROFILING.out.profiled_taxa
     //.map { file -> 
@@ -204,88 +220,95 @@ workflow  {
     //.set { profiled_taxa_mapped }
 
 
-    // ----------------------------------------
-    // Step 3: Functional Profiling with HUMAnN
-    // ----------------------------------------
+
+    /*
+        ----------------------------
+        Step 3: Functional Profiling
+        ----------------------------
+    */
     
     // Define valid database types for HUMAnN
-    //def valid_humann_db_options = [
-    //    "chocophlan" : ["full", "DEMO"],
-    //    "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond", "DEMO_diamond"]
-    //]
+    def valid_humann_db_options = [
+        "chocophlan" : ["full", "DEMO"],
+        "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond", "DEMO_diamond"]
+    ]
 
     // Validate and process the humann nucleotide database parameter
-    //if (params.humann_nucleotide_db) {
-    //    def nucleotide_db_combo = params.humann_nucleotide_db
-    //        .split(',')
-    //        .collect { it.tokenize(':') } //split each entry [db, build]
+    if (params.humann_nucleotide_db) {
+        def nucleotide_db_combo = params.humann_nucleotide_db
+            .split(',')
+            .collect { it.tokenize(':') } //split each entry [db, build]
 
-    //        nucleotide_db_combo.each { entry ->
-    //            if (entry.size() != 2) {
-    //                exit 1, "❌ Invalid humann nucleotide database entry: '${entry.join(':')}'. Must be in format: <nuc_db>:<nuc_build>"
-    //            }
-    //            def (nuc_db, nuc_build) = entry
-    //            if (!valid_humann_db_options.containsKey(nuc_db)) {
-    //                exit 1, "❌ Unknown database: '${nuc_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
-    //            }
-    //            if (!(nuc_build in valid_humann_db_options[nuc_db])) {
-    //                exit 1, "❌ Invalid build '${nuc_build}' for database '${nuc_db}'. Allowed builds: ${valid_humann_db_options[nuc_db].join(', ')}"
-    //            }
-    //        }
+            nucleotide_db_combo.each { entry ->
+                if (entry.size() != 2) {
+                    exit 1, "❌ Invalid humann nucleotide database entry: '${entry.join(':')}'. Must be in format: <nuc_db>:<nuc_build>"
+                }
+                def (nuc_db, nuc_build) = entry
+                if (!valid_humann_db_options.containsKey(nuc_db)) {
+                    exit 1, "❌ Unknown database: '${nuc_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
+                }
+                if (!(nuc_build in valid_humann_db_options[nuc_db])) {
+                    exit 1, "❌ Invalid build '${nuc_build}' for database '${nuc_db}'. Allowed builds: ${valid_humann_db_options[nuc_db].join(', ')}"
+                }
+            }
 
-    //        Channel.fromList(nucleotide_db_combo)
-    //            .map { db, build -> 
-    //                def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
-    //                tuple( db, build, outdir )
-    //            }
-    //            .set { nucleotide_db_inputs }
+            Channel.fromList(nucleotide_db_combo)
+                .map { db, build -> 
+                    def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
+                    tuple( db, build, outdir )
+                }
+                .set { nucleotide_db_inputs }
 
             // Download HUMAnN nucleotide database
-    //        DOWNLOAD_HUMANN_NUCLEOTIDE_DB(nucleotide_db_inputs)
-    //            .collect()
-    //            .map { db_list -> [db_list] }
-    //            .set { humann_nucleotide_db_ch }
-    //}
-    //else {
-    //    println "⚠️ HUMAnN nucleotide database not provided. Functional profiling may not work as expected."
-    //}
+            DOWNLOAD_HUMANN_NUCLEOTIDE_DB(nucleotide_db_inputs)
+                .collect()
+                .map { db_list -> [db_list] }
+                .set { humann_nucleotide_db_ch }
+    }
+    else {
+        println "⚠️ HUMAnN nucleotide database not provided. Functional profiling may not work as expected."
+    }
+
+    humann_nucleotide_db_ch.view { "$it" }
 
     
     // Validate and process the humann protein database parameter
-    //if (params.humann_protein_db) {
-    //    def protein_db_combo = params.humann_protein_db
-    //        .split(',')
-    //        .collect { it.tokenize(':') } //split each entry [db, build]
+    if (params.humann_protein_db) {
+        def protein_db_combo = params.humann_protein_db
+            .split(',')
+            .collect { it.tokenize(':') } //split each entry [db, build]
 
-    //        protein_db_combo.each { entry ->
-    //            if (entry.size() != 2) {
-    //                exit 1, "❌ Invalid humann protein database entry: '${entry.join(':')}'. Must be in format: <prot_db>:<prot_build>"
-    //            }
-    //            def (prot_db, prot_build) = entry
-    //            if (!valid_humann_db_options.containsKey(prot_db)) {
-    //                exit 1, "❌ Unknown database: '${prot_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
-    //            }
-    //            if (!(prot_build in valid_humann_db_options[prot_db])) {
-    //                exit 1, "❌ Invalid build '${prot_build}' for database '${prot_db}'. Allowed builds: ${valid_humann_db_options[prot_db].join(', ')}"
-    //            }
-    //        }
+            protein_db_combo.each { entry ->
+                if (entry.size() != 2) {
+                    exit 1, "❌ Invalid humann protein database entry: '${entry.join(':')}'. Must be in format: <prot_db>:<prot_build>"
+                }
+                def (prot_db, prot_build) = entry
+                if (!valid_humann_db_options.containsKey(prot_db)) {
+                    exit 1, "❌ Unknown database: '${prot_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
+                }
+                if (!(prot_build in valid_humann_db_options[prot_db])) {
+                    exit 1, "❌ Invalid build '${prot_build}' for database '${prot_db}'. Allowed builds: ${valid_humann_db_options[prot_db].join(', ')}"
+                }
+            }
 
-    //        Channel.fromList(protein_db_combo)
-    //            .map { db, build -> 
-    //                def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
-    //                tuple( db, build, outdir )
-    //            }
-    //            .set { protein_db_inputs }
+            Channel.fromList(protein_db_combo)
+                .map { db, build -> 
+                    def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
+                    tuple( db, build, outdir )
+                }
+                .set { protein_db_inputs }
 
             // Download HUMAnN protien database
-    //        DOWNLOAD_HUMANN_PROTEIN_DB(protein_db_inputs)
-    //            .collect()
-    //            .map { db_list -> [db_list] }
-    //            .set { humann_protein_db_ch }
-    //}
-    //else {
-    //    println "⚠️ HUMAnN protein database not provided. Functional profiling may not work as expected."
-    //}
+            DOWNLOAD_HUMANN_PROTEIN_DB(protein_db_inputs)
+                .collect()
+                .map { db_list -> [db_list] }
+                .set { humann_protein_db_ch }
+    }
+    else {
+        println "⚠️ HUMAnN protein database not provided. Functional profiling may not work as expected."
+    }
+
+    humann_protein_db_ch.view { "$it" }
 
 
     //merged_reads.combine(TAXONOMIC_PROFILING.out.profiled_taxa)
