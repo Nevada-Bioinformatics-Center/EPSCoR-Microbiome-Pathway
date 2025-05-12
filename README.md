@@ -20,23 +20,18 @@ Sample Type: Paired-end
 nextflow main.nf \\
             --samplesheet path/to/INPUT.csv \\
             --output /path/to/OUTPUT_DIR \\
-            --library PE \\
-            --kneaddata_path /path/to/folder/kneaddata/database/download/ \\
+            --kneaddata_db_path /path/to/folder/kneaddata/database/download/ \\
             --kneaddata_db REFERENCE_DB \\
-            --nucleotide_db /path/to/downloaded/nucleotide/database \\
-            --protein_db /path/to/downloaded/protein/database \\
-            --pathway_db metacyc
+            --metaphlan_db_path /path/to/folder/metaphlan/database/download
 ```
 
 ## Parameter options
 
-* `--samplesheet` : Absolute path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
+* `--samplesheet` : Path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
 
-* `--output` : Absoulute path to the output directory where results will be saved.
+* `--output` : Path to the output directory where results will be saved.
 
-* `--library` : sequencing library type, e.g., PE for paired-end or SE for single-end. (default: PE)
-
-* `--kneaddata_path` : Absolute path to saved or where to save knead_data databases (default: ./kneaddata_db/)
+* `--kneaddata_db_path` : Path to saved or where to save knead_data databases (default: ./kneaddata_db/)
 
 * `--kneaddata_db` : comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2) 
     Possible options: 
@@ -47,9 +42,5 @@ nextflow main.nf \\
         https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz
 
         and extract it into the kneaddata_path/human_genome_bowtie2 directory. The within that directory run the following command: touch .done
-            
-* `--nucleotide_db` : Specify the directory containing the nucleotide database
 
-* `--protein_db` : Specify the directory containing the protein database
-            
-* `--pathway_db` : Specify the database to use for pathway {metacyc, unipathways} computations (default: metacyc)
+* `--metaphlan_db_path` : Path to saved or where to save metaphlan databases (default: ./database/)

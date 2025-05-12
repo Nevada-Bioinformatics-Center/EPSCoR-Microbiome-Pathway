@@ -8,6 +8,7 @@
 
 process KNEADING_DATA {
     tag "KneadData: ${sample_id}"
+    label 'kneaddata_conda'
     publishDir "${params.output}/kneaddata_out", mode: 'copy'
 
     input:

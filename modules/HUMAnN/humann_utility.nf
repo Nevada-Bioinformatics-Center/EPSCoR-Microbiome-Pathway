@@ -9,28 +9,28 @@
 
 //  This process will join (merge) multiple single-sample output files 
 //  into a single table with multi-samples
-process join_tables {
-    tag "humann_join_tables"
-    publishDir "${params.output}/humann_out", mode: 'copy'
+//process join_tables {
+//    tag "humann_join_tables"
+//    publishDir "${params.output}/humann_out", mode: 'copy'
 
-    input:
-        path(genefamilies)
-        path(pathabundance)
-        path(pathcoverage)
+//    input:
+//        path(genefamilies)
+//        path(pathabundance)
+//        path(pathcoverage)
 
 
-    output:
-        path( "joined_genefamilies.tsv" ),  emit: merged_genefamilies
-        path( "joined_pathabundance.tsv" ), emit: merged_pathabundance
-        path( "joined_pathcoverage.tsv" ), emit: merged_pathcoverage
+//    output:
+//        path( "joined_genefamilies.tsv" ),  emit: merged_genefamilies
+//        path( "joined_pathabundance.tsv" ), emit: merged_pathabundance
+//        path( "joined_pathcoverage.tsv" ), emit: merged_pathcoverage
 
-    script:
-    """
-    humann_join_tables --input ${genefamilies} --output ${merged_genefamilies}
-    humann_join_tables --input ${pathabundance} --output ${merged_pathabundance}
-    humann_join_tables --input ${pathcoverage} --output ${merged_pathcoverage}
-    """
-}
+//    script:
+//    """
+//    humann_join_tables --input ${genefamilies} --output ${merged_genefamilies}
+//    humann_join_tables --input ${pathabundance} --output ${merged_pathabundance}
+//    humann_join_tables --input ${pathcoverage} --output ${merged_pathcoverage}
+//    """
+//}
 
 
 // This will normalize the merged pathway abundance to relative abundances
