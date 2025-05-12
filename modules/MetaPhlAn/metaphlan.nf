@@ -14,7 +14,7 @@ process TAXONOMIC_PROFILING {
 
 
     input:
-        tuple val(sample_id), path(reads), path(metaphlan_db_dir)
+        tuple val(sample_id), path(merged_fastq), path(metaphlan_db_dir)
 
     output:
         path("${sample_id}_profile.tsv"), emit: profiled_taxa
@@ -25,12 +25,12 @@ process TAXONOMIC_PROFILING {
     export DEFAULT_DB_FOLDER=${metaphlan_db_dir}
 
     metaphlan \\
-        ${reads} \\
+        ${merged_fastq} \\
         --input_type fastq \\
         --bowtie2db \$DEFAULT_DB_FOLDER \\
         --output_file ${sample_id}_profile.tsv \\
+        --bowtie2out ${sample_id}_bowtie2.bz2 \\
         --nproc 4 \\
         &> ${sample_id}_metaphlan.log
-
     """
 }
