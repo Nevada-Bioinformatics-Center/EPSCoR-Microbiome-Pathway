@@ -18,29 +18,16 @@ Sample Type: Paired-end
 
 ```
 nextflow main.nf \\
+            -profile local \\
             --samplesheet path/to/INPUT.csv \\
             --output /path/to/OUTPUT_DIR \\
             --kneaddata_db_path /path/to/folder/kneaddata/database/download/ \\
-            --kneaddata_db REFERENCE_DB \\
-            --metaphlan_db_path /path/to/folder/metaphlan/database/download
+            --kneaddata_db REFERENCE_DB:BUILD \\
+            --metaphlan_db_path /path/to/folder/metaphlan/database/download \\
+            --humann_db_path /path/to/folder/humann/databases/download \\
+            --humann_nucleotide_db NUCLEOTIDE_DB:BUILD \\
+            --humann_protein_db PROTEIN_DB:BUILD \\
+            --humann_pathway_db PATHWAY_DB
 ```
 
 ## Parameter options
-
-* `--samplesheet` : Path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
-
-* `--output` : Path to the output directory where results will be saved.
-
-* `--kneaddata_db_path` : Path to saved or where to save knead_data databases (default: ./kneaddata_db/)
-
-* `--kneaddata_db` : comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2) 
-    Possible options: 
-        `human_transcriptome:bowtie2`, `ribosomal_RNA:bowtie2`, `mouse_C57BL:bowtie2`, `dog_genome:bowtie2`, `cat_genome:bowtie2`, `human_genome:bmtagger`
-
-        There currently is a bug in the current kneaddata v0.12.2 release of kneaddata for human_genome:bowtie2. This will be fixed in 0.12.3.
-        You can manually create the "human_genome_bowtie2" directory and manually download the correct file here 
-        https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz
-
-        and extract it into the kneaddata_path/human_genome_bowtie2 directory. The within that directory run the following command: touch .done
-
-* `--metaphlan_db_path` : Path to saved or where to save metaphlan databases (default: ./database/)

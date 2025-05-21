@@ -12,5 +12,10 @@ databases
 kneaddata_db
 metaphlan_db
 humann_db
+humann_nucdb
+humann_protdb
+chocophlan
+uniref
 work
 results
+.done
