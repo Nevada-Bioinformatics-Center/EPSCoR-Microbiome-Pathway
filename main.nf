@@ -32,10 +32,10 @@ nextflow.enable.dsl = 2
 include { DOWNLOAD_KNEADDATA_DB } from './modules/KneadData/kneaddata_db.nf'
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { DOWNLOAD_METPHLAN_DB } from './modules/MetaPhlAn/metaphlan_db.nf'
-//include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
+include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
-//include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 
 
 
@@ -174,8 +174,8 @@ workflow  {
     //    .set { merged_reads }
     
     //kneaddata_status_ch
-    //    .filter { _sample_id, _read, _dbs, exists -> exists && !params.force }
-    //    .map { sample_id, _read, _dbs, _exists ->
+    //    .filter { _sample_id, _read, exists -> exists && !params.force }
+    //    .map { sample_id, _read, _exists ->
     //        def out1 = file("${params.output}/kneaddata_out/${sample_id}.fastq")
     //        tuple(sample_id, [out1])
     //    }
@@ -202,17 +202,24 @@ workflow  {
     metaphlan_db_dir_out_ch.view {"$it"}
 
     // Combine merged reads with MetaPhlAn database path
-    //merged_reads
-    //.combine(metaphlan_db_dir_out_ch)
-    //.map { sample_id, reads, db_dir -> tuple(sample_id, reads, db_dir) }
-    //.set { metaphlan_inputs }
+    KNEADING_DATA.out.kneaddata_fastq
+        .collectFile()
+        .map { fastq_file -> 
+            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+            tuple(sample_id, fastq_file)
+        }
+        .combine(metaphlan_db_dir_out_ch)
+        .map { sample_id, reads, db_dir -> 
+            tuple(sample_id, reads, db_dir) 
+        }
+        .set { metaphlan_inputs }
 
-    //metaphlan_inputs.view { "🧪 MetaPhlAn input: $it" }
+    metaphlan_inputs.view { "🧪 MetaPhlAn input: $it" }
 
     // Run MetaPhlAn for taxonomic profiling
-    //TAXONOMIC_PROFILING(metaphlan_inputs)
+    TAXONOMIC_PROFILING(metaphlan_inputs)
 
-    //TAXONOMIC_PROFILING.out.profiled_taxa
+    TAXONOMIC_PROFILING.out.profiled_taxa.set { profiled_taxa }
     //.map { file -> 
     //    def sample_id = file.getName().replace('_profile.tsv', '') // Extract sample_id from file name
     //    tuple(sample_id, file)
@@ -254,7 +261,7 @@ workflow  {
 
             Channel.fromList(nucleotide_db_combo)
                 .map { db, build -> 
-                    def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
+                    def outdir = "${params.humann_nuc_db_path}".replaceAll(/\/+/, '/')
                     tuple( db, build, outdir )
                 }
                 .set { nucleotide_db_inputs }
@@ -293,7 +300,7 @@ workflow  {
 
             Channel.fromList(protein_db_combo)
                 .map { db, build -> 
-                    def outdir = "${params.humann_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
+                    def outdir = "${params.humann_prot_db_path}".replaceAll(/\/+/, '/')
                     tuple( db, build, outdir )
                 }
                 .set { protein_db_inputs }
@@ -309,6 +316,42 @@ workflow  {
     }
 
     humann_protein_db_ch.view { "$it" }
+
+
+    KNEADING_DATA.out.kneaddata_fastq
+        .collectFile()
+        .map { fastq_file -> 
+            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+            tuple(sample_id, fastq_file)
+        }
+        .combine(humann_nucleotide_db_ch)
+        .map { sample_id, reads, nuc_db ->
+            tuple(sample_id, reads, nuc_db)
+        }
+        .combine(humann_protein_db_ch)
+        .map { sample_id, reads, nuc_db, prot_db ->
+            tuple(sample_id, reads, nuc_db, prot_db)
+        }
+        .combine(profiled_taxa)
+        .map { sample_id, reads, nuc_db, prot_db, taxa->
+            tuple(sample_id, reads, nuc_db, prot_db, taxa)
+        }
+        .set { humann_inputs }
+        
+    humann_inputs.view()
+
+
+    //    merged_fastq
+    //        .map { fastq_file -> 
+    //            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+    //            tuple(sample_id, fastq_file)
+    //        }
+    //        .combine(humann_nucleotide_db_ch, humann_protein_db_ch)
+    //        .map { tuple1, nucleotide_db, protein_db ->
+    //            def (sample_id, fastq) = tuple1
+    //            tuple(sample_id, fastq, nucleotide_db, protein_db)
+    //        }
+    //        .view { "Combined: $it" }
 
 
     //merged_reads.combine(TAXONOMIC_PROFILING.out.profiled_taxa)
@@ -328,7 +371,7 @@ workflow  {
     //            .set { functional_inputs }
     //functional_inputs.view { "🧪 Functional profiling input: $it" }
 
-    //FUNCTIONAL_PROFILING ( functional_inputs, nucleotide_db_ch, protein_db_ch )
+    FUNCTIONAL_PROFILING (humann_inputs)
 
 
     /*

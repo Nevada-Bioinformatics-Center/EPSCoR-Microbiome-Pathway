@@ -17,7 +17,7 @@ process DOWNLOAD_HUMANN_NUCLEOTIDE_DB {
     tuple val(nuc_database), val(nuc_build), val(install_dir)
 
     output:
-    val(install_dir), emit: downloaded_nucleotide_db  // Output just the path string
+    val("${install_dir}/${nuc_database}"), emit: downloaded_nucleotide_db  // Output just the path string
 
     script:
     """
@@ -44,7 +44,7 @@ process DOWNLOAD_HUMANN_PROTEIN_DB {
     tuple val(prot_database), val(prot_build), val(install_dir)
 
     output:
-    val(install_dir), emit: downloaded_nucleotide_db  // Output just the path string
+    val("${install_dir}/${prot_database}"), emit: downloaded_nucleotide_db  // Output just the path string
 
     script:
     """
