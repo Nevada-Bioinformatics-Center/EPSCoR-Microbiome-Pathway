@@ -36,6 +36,7 @@ include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { RUN_MULTIQC } from './modules/MultiQC/multiqc.nf'
 
 
 
@@ -372,6 +373,29 @@ workflow  {
     //functional_inputs.view { "🧪 Functional profiling input: $it" }
 
     FUNCTIONAL_PROFILING (humann_inputs)
+
+
+
+    /*
+        ----------------------------
+        Step 6: MultiQC reports
+        ----------------------------
+    */
+
+    // Run multiqc
+    RUN_MULTIQC(
+        KNEADING_DATA.out.kneaddata_fastqc_zip.mix(
+            KNEADING_DATA.out.kneaddata_fastq,
+            KNEADING_DATA.out.kneaddata_log,
+            KNEADING_DATA.out.kneaddata_fastqc_html,
+            TAXONOMIC_PROFILING.out.profiled_taxa,
+            TAXONOMIC_PROFILING.out.metaphlan_log,
+            FUNCTIONAL_PROFILING.out.gene_fam,
+            FUNCTIONAL_PROFILING.out.path_abundance,
+            FUNCTIONAL_PROFILING.out.path_coverage,
+            FUNCTIONAL_PROFILING.out.humann_log
+        ).collect()
+    )
 
 
     /*
