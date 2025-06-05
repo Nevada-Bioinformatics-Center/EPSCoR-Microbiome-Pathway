@@ -4,6 +4,8 @@ process RUN_MULTIQC {
     tag "MultiQC"
 
     label 'multiqc_conda'
+    label 'multiqc_docker'
+    label 'medium'
 
     publishDir "${params.output}/multiqc_out", mode: 'copy'
 
