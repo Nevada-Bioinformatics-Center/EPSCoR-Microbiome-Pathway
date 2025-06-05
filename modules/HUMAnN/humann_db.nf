@@ -11,6 +11,7 @@ process DOWNLOAD_HUMANN_NUCLEOTIDE_DB {
     tag "humann_database_download: ${nuc_database};${nuc_build}"
 
     label 'humann_conda'
+    label 'humann_docker'
     label 'medium'
 
     input:

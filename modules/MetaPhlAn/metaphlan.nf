@@ -11,6 +11,7 @@ process TAXONOMIC_PROFILING {
     tag "MetaPhlAn: ${sample_id}"
 
     label 'metaphlan_conda'
+    label 'metaphlan_docker'
     label 'high'
 
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
@@ -32,7 +33,7 @@ process TAXONOMIC_PROFILING {
         --bowtie2db \$DEFAULT_DB_FOLDER \\
         --output_file ${sample_id}_profile.tsv \\
         --bowtie2out ${sample_id}_bowtie2.bz2 \\
-        --nproc 4 \\
+        --nproc 2 \\
         &> ${sample_id}_metaphlan.log
     """
 }

@@ -18,7 +18,7 @@ Sample Type: Paired-end
 
 ```
 nextflow main.nf \\
-            -profile local \\
+            -profile <PROFILE> \\
             --samplesheet path/to/INPUT.csv \\
             --output /path/to/OUTPUT_DIR \\
             --kneaddata_db_path /path/to/folder/kneaddata/database/download/ \\
@@ -32,6 +32,11 @@ nextflow main.nf \\
 ```
 
 ## Parameter options
+
+* `-profile` : Specify the profile to use for running the pipeline in local or on the HPC.
+    This can be set to the following:
+    1. _mario_ ( To run the pipeline on local machine, uses separate conda environment for each process )
+    2. _luigi_ ( To run the pipeline on local machine, uses separate docker container for each process )
 
 * `--samplesheet` : Path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
 

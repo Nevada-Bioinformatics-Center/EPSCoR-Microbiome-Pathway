@@ -10,6 +10,7 @@ process DOWNLOAD_METPHLAN_DB {
     tag "metaphlan_db_download"
     
     label 'metaphlan_conda'
+    label 'metaphlan_docker'
     label 'medium'
 
     input:

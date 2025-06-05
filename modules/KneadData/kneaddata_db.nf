@@ -12,6 +12,7 @@ process DOWNLOAD_KNEADDATA_DB {
     tag "kneaddata_download: ${database};${build}"
 
     label 'kneaddata_conda'
+    label 'kneaddata_docker'
     label 'medium'
 
     input:
