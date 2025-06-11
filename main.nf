@@ -325,6 +325,17 @@ workflow  {
             def sample_id = fastq_file.getBaseName().replace('.fastq', '')
             tuple(sample_id, fastq_file)
         }
+        .set { sample_fastq_ch }
+
+        profiled_taxa
+        .collectFile()
+        .map { taxa_file ->
+            def sample_id = taxa_file.getName().replace('_profile.tsv', '')
+            tuple(sample_id, taxa_file)
+         }
+        .set { sample_taxa_ch }
+
+        sample_fastq_ch
         .combine(humann_nucleotide_db_ch)
         .map { sample_id, reads, nuc_db ->
             tuple(sample_id, reads, nuc_db)
@@ -333,12 +344,12 @@ workflow  {
         .map { sample_id, reads, nuc_db, prot_db ->
             tuple(sample_id, reads, nuc_db, prot_db)
         }
-        .combine(profiled_taxa)
-        .map { sample_id, reads, nuc_db, prot_db, taxa->
+        .join(sample_taxa_ch)
+        .map { sample_id, reads, nuc_db, prot_db, taxa ->
             tuple(sample_id, reads, nuc_db, prot_db, taxa)
         }
         .set { humann_inputs }
-        
+
     humann_inputs.view()
 
 

@@ -30,9 +30,10 @@ process TAXONOMIC_PROFILING {
     metaphlan \\
         ${merged_fastq} \\
         --input_type fastq \\
-        --bowtie2db \$DEFAULT_DB_FOLDER \\
+        --db_dir \$DEFAULT_DB_FOLDER \\
         --output_file ${sample_id}_profile.tsv \\
-        --bowtie2out ${sample_id}_bowtie2.bz2 \\
+        --mapout ${sample_id}_bowtie2.bz2 \\
+        --offline \\
         --nproc 2 \\
         &> ${sample_id}_metaphlan.log
     """

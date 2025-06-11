@@ -27,7 +27,8 @@ process DOWNLOAD_METPHLAN_DB {
         mkdir -p ${install_dir}
         export DEFAULT_DB_FOLDER=${install_dir}
 
-        metaphlan --install --force_download --bowtie2db ${install_dir} &> ${install_dir}/metaphlan_db.log
+        metaphlan --install --index mpa_vJun23_CHOCOPhlAnSGB_202403 --db_dir ${install_dir} &> ${install_dir}/metaphlan_db.log
+        
         touch ${install_dir}/.done
     else
         echo "Database already exists at ${install_dir}, skipping download."

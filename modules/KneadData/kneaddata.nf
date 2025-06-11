@@ -30,7 +30,7 @@ process KNEADING_DATA {
         kneaddata \
         --input1 ${read[0]} \
         --input2 ${read[1]} \
-        --threads 10 \
+        --threads 4 \
         --processes 2 \
         ${db_flags} \
         --output  "./" \

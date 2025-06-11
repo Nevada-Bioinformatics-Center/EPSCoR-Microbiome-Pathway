@@ -1,2 +1,9 @@
 sampleID,read1,read2
-GLDS-286_5726,/Users/kanishkamanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-286_metagenomics_5726_S10_L003_R1_001_HRremoved.fastq.gz,/Users/kanishkamanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-286_metagenomics_5726_S10_L003_R2_001_HRremoved.fastq.gz
+SRR11402514,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402514_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402514_2.fastq.gz
+SRR11402515,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402515_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402515_2.fastq.gz
+SRR11402516,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402516_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402516_2.fastq.gz
+SRR11402517,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402517_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402517_2.fastq.gz
+SRR11402518,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402518_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402518_2.fastq.gz
+SRR11402519,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402519_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402519_2.fastq.gz
+SRR11402520,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402520_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402520_2.fastq.gz
+SRR11402521,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402521_1.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/SRR11402521_2.fastq.gz,
