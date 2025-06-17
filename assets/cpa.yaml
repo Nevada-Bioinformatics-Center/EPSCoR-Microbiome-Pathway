@@ -1,0 +1,22 @@
+name: r-cpa
+channels:
+  - defaults
+  - conda-forge
+  - bioconda
+  - biobakery
+dependencies:
+  - r-base
+  - r-dplyr
+  - r-lubridate
+  - r-purrr
+  - r-tidyverse
+  - r-stringr
+  - r-pbmcapply
+  - r-stringdist
+  - r-data.table
+  - r-rcurl
+  - r-remotes
+  - bioconductor-summarizedexperiment
+  - bioconductor-limma
+  - bioconductor-fgsea
+  - bioconductor-uniprot.ws

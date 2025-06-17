@@ -1,0 +1,12 @@
+name: go_term
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - data.table
+  - r-pacman
+  - r-rcurl
+  - r-stringr
+  - r-tidyverse

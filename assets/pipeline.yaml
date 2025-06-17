@@ -1,0 +1,19 @@
+name: biobakery
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - kneaddata=0.12.2
+  - fastqc=0.12.1
+  - metaphlan=4.2.2
+  - humann=3.9
+  - bioconda::multiqc=1.29
+  - r-base
+  - r-dplyr
+  - r-curl
+  - r-devtools
+  - bioconductor-summarizedexperiment
+  - bioconductor-limma
+  - bioconductor-fgsea
+  - bioconductor-uniprot.ws

@@ -1,16 +1,22 @@
 # EPSCoR NASA Special Project: Pathway-level, consensus analysis of microbiome profiling data
 
-## Download the data
+## Introduction
 
-Download the data from [**Open Science Data Repository (OSDR)**](https://www.nasa.gov/osdr/). We are currently using the [_OSD-286_](https://osdr.nasa.gov/bio/repo/data/studies/OSD-286) dataset.
-Description: Metagenome analysis of ISS cargo resupply vehicles (CRV).
-Factors: 'Spaceflight', 'Treatment', 'Sample Location'
+## Pipeline Summary
+
+![](images/pipeline.png)
+
+## Dataset
+
+Download the data from [**Open Science Data Repository (OSDR)**](https://www.nasa.gov/osdr/). We are currently using the [_OSD-809_](https://osdr.nasa.gov/bio/repo/data/studies/OSD-809) dataset.
+Description: Effects of an anaerobic membrance bioreactor upset event on nitrogen speciation and microbial community in a downstream phototrophic membrane bioreactor.
+Factors: 'Time'
 Assay: Metagenomic sequencing - Whole Genome Shotgun Sequencing - Illumina Nextera Kit
 Device Platform: Illumina
-Samples: 8
+Samples: 12
 Sample Type: Paired-end
 
-## To run the pipeline
+## Usage
 
 - Install Nextflow on your system.
 - Create a conda environment and install the **"Biobakery"** packages - **"KneadData"**, **"MetaPhlAn"**, **"HUMAnN"** and **"FastQC"**.
@@ -59,22 +65,30 @@ nextflow main.nf \\
 
 * `--metaphlan_db_path` : Path to the directory where metaphlan databases are saved or will be downloaded (default: ./metaphlan_db/)
 
-* `--humann_nucleotide_db` : Comma separated list with no spaces of nucleotide databases for humann to use in database:build format (default: chocophlan:DEMO)
+* `--humann_nucleotide_db` : Comma separated list with no spaces of nucleotide databases for humann to use in database:build format (default: chocophlan:full)
     Possible options:
         - chocophlan:full
-        - chocophlan:DEMO
 
 * `--humann_nuc_db_path` : Path to the directory where humann nucleotide database is saved or will be downloaded (default: ./humann_nucdb/)
 
-* `--humann_protein_db` : Comma separated list with no spaces of protein databases for humann to use in database:build format (default: uniref:DEMO_diamond)
+* `--humann_protein_db` : Comma separated list with no spaces of protein databases for humann to use in database:build format (default: uniref:uniref50_diamond)
 
     Possible options:
         - uniref:uniref50_diamond
         - uniref:uniref90_diamond
         - uniref:uniref50_ec_filtered_diamond
         - uniref:uniref90_ec_filtered_diamond
-        - uniref:DEMO_diamond
 
 * `--humann_prot_db_path` : Path to the directory where humann protein database is saved or will be downloaded (default: ./humann_protdb/)
 
 * `--humann_pathway_db` : Specify the database to use for pathway {metacyc, unipathways} computations (default: metacyc)
+
+## Reporting
+
+## Pipeline Output
+
+## Credits
+
+## Contribution and Support
+
+## Citations
