@@ -13,6 +13,7 @@ goobo_file <- args[4]
 
 
 # Install and load required packages
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 library(pacman)
 p_load(tidyverse, RCurl, data.table, stringr)
 

@@ -10,7 +10,7 @@ process GENERATE_GOTERMS {
     tag "Gene Ontology Terms"
 
     label 'go_term_conda'
-    label 'low'
+    label 'medium'
 
     output:
         path ("goterms/GOTerms.rds"), emit: goterms
@@ -44,15 +44,16 @@ process CPA_ANALYSIS {
     publishDir "${params.outdir}/cpa_out", mode: 'copy'
 
     input:
-        path (metafile)
+        path (samplesheet)
         path (humann_dir)
-        path ("bin/utils.R")
+        path (goterms)
+ 
     
     output:
         path ("/*")
     
     script:
     """
-    cpa.R ${metafile} ${humann_dir} cpa_out
+    cpa.R ${samplesheet} ${humann_dir} ${goterms}
     """
 }

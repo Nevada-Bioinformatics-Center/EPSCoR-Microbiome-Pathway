@@ -5,7 +5,8 @@ channels:
   - defaults
 dependencies:
   - r-base
-  - data.table
+  - r-data.table
+  - r-r.utils
   - r-pacman
   - r-rcurl
   - r-stringr

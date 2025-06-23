@@ -37,6 +37,7 @@ include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 include { GENERATE_GOTERMS } from './modules/CPA/cpa.nf'
+include { CPA_ANALYSIS } from './modules/CPA/cpa.nf'
 include { RUN_MULTIQC } from './modules/MultiQC/multiqc.nf'
 
 
@@ -340,13 +341,9 @@ workflow  {
         ----------------------------
     */
     GENERATE_GOTERMS()
-    //humann_genefam_ch = FUNCTIONAL_PROFILING.out.gene_fam.collectFile()
-    //CPA_ANALYSIS(
-    //    file(params.metafile),
-    //    file(humann_genefam_ch),
-    //    file(GENERATE_GOTERMS.out.goterms)
-    //)
-
+    humann_genefam_ch = FUNCTIONAL_PROFILING.out.gene_fam.collectFile()
+    
+    CPA_ANALYSIS( samples_ch, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
 
 
     /*
@@ -375,6 +372,7 @@ workflow  {
      * Pipeline event handler
      */
 }
+
 
 
 
