@@ -15,8 +15,8 @@ nextflow.enable.dsl = 2
 
 // -------------------------------------------------------------
 // `main.nf` is the pipeline script for this nextflow pipeline
-// Should contain the following sections:
-//      - Process definitions
+// Contains the following sections:
+//      - Import modules
 //      - Pipeline structure
 //      - Pipeline summary logs
 // -------------------------------------------------------------
@@ -36,6 +36,9 @@ include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { GENERATE_GOTERMS } from './modules/CPA/cpa.nf'
+include { EXTRACT_METAINFO } from './modules/CPA/cpa.nf'
+include { CPA_ANALYSIS } from './modules/CPA/cpa.nf'
 include { RUN_MULTIQC } from './modules/MultiQC/multiqc.nf'
 
 
@@ -75,14 +78,14 @@ workflow  {
     // Parse the samplesheet and validate paired-end format
         samples_ch = Channel
             .fromPath("file:${params.samplesheet}", checkIfExists: true)
-            .splitCsv(header: ['sampleID', 'read1', 'read2'], sep: ',', skip: 1)
+            .splitCsv(header: true, sep: ',', skip: 0)
             .map { row -> 
-            if (!row.read1 || !row.read2) {
-                exit 1, "Invalid samplesheet format! Each row must contain 'sampleID', 'read1', and 'read2' columns for paired-end reads." 
+            if (!row.fastq_1 || !row.fastq_2) {
+                exit 1, "Each row must contain 'sample', 'factors', 'fastq_1', and 'fastq_2'." 
             }
-            tuple(row.sampleID, [file(row.read1), file(row.read2)])
+            tuple(row.sample, row.factors, [file(row.fastq_1), file(row.fastq_2)])
             }
-
+        
 
 
     /*
@@ -144,44 +147,25 @@ workflow  {
     // Combine reads + database
     samples_ch
         .combine(kneaddata_db_ch)
-        .map { sample_id, reads, dbs ->
+        .map { sample_id, factors, reads, dbs ->
             def out1 = file("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq")
             def out2 = file("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq")
 
             def exists = out1.exists() && out2.exists()
-            tuple(sample_id, reads, dbs, exists)
+            tuple(sample_id, factors, reads, dbs, exists)
         }
         .set { kneaddata_status_ch }
 
     // Final check for Kneaddata inputs
     kneaddata_status_ch
-        .filter { _sample_id, _reads, _dbs, exists -> !exists || params.force }
-        .map    { sample_id, read, dbs, _exists -> tuple(sample_id, read, dbs) }
+        .filter { _sample_id, _factors, _reads, _dbs, exists -> !exists || params.force }
+        .map    { sample_id, _factors, read, dbs, _exists -> tuple(sample_id, read, dbs) }
         .set    { kneaddata_inputs_filtered }
 
     kneaddata_inputs_filtered.view { it -> "🧪 KNEADDATA sample input: $it" }
 
     // Run KneadData
     KNEADING_DATA(kneaddata_inputs_filtered)
-    
-    //kneaddata_status_ch
-    //    .filter { sample_id, read, dbs, exists -> exists && !params.force }
-    //    .map { sample_id, read, dbs, exists ->
-    //        def out1 = file("${params.output}/kneaddata_out/${sample_id}_paired_1.fastq")
-    //        def out2 = file("${params.output}/kneaddata_out/${sample_id}_paired_2.fastq")
-    //        tuple(sample_id, [out1, out2])
-    //    }
-    //    .concat(KNEADING_DATA.out.kneaddata_fastq)
-    //    .set { merged_reads }
-    
-    //kneaddata_status_ch
-    //    .filter { _sample_id, _read, exists -> exists && !params.force }
-    //    .map { sample_id, _read, _exists ->
-    //        def out1 = file("${params.output}/kneaddata_out/${sample_id}.fastq")
-    //        tuple(sample_id, [out1])
-    //    }
-    //    .concat(KNEADING_DATA.out.kneaddata_fastq)
-    //    .set { merged_reads }
     
 
 
@@ -221,11 +205,6 @@ workflow  {
     TAXONOMIC_PROFILING(metaphlan_inputs)
 
     TAXONOMIC_PROFILING.out.profiled_taxa.set { profiled_taxa }
-    //.map { file -> 
-    //    def sample_id = file.getName().replace('_profile.tsv', '') // Extract sample_id from file name
-    //    tuple(sample_id, file)
-    //}
-    //.set { profiled_taxa_mapped }
 
 
 
@@ -237,8 +216,8 @@ workflow  {
     
     // Define valid database types for HUMAnN
     def valid_humann_db_options = [
-        "chocophlan" : ["full", "DEMO"],
-        "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond", "DEMO_diamond"]
+        "chocophlan" : ["full"],
+        "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond"]
     ]
 
     // Validate and process the humann nucleotide database parameter
@@ -325,6 +304,17 @@ workflow  {
             def sample_id = fastq_file.getBaseName().replace('.fastq', '')
             tuple(sample_id, fastq_file)
         }
+        .set { sample_fastq_ch }
+
+        profiled_taxa
+        .collectFile()
+        .map { taxa_file ->
+            def sample_id = taxa_file.getName().replace('_profile.tsv', '')
+            tuple(sample_id, taxa_file)
+         }
+        .set { sample_taxa_ch }
+
+        sample_fastq_ch
         .combine(humann_nucleotide_db_ch)
         .map { sample_id, reads, nuc_db ->
             tuple(sample_id, reads, nuc_db)
@@ -333,46 +323,54 @@ workflow  {
         .map { sample_id, reads, nuc_db, prot_db ->
             tuple(sample_id, reads, nuc_db, prot_db)
         }
-        .combine(profiled_taxa)
-        .map { sample_id, reads, nuc_db, prot_db, taxa->
+        .join(sample_taxa_ch)
+        .map { sample_id, reads, nuc_db, prot_db, taxa ->
             tuple(sample_id, reads, nuc_db, prot_db, taxa)
         }
         .set { humann_inputs }
-        
+
     humann_inputs.view()
 
 
-    //    merged_fastq
-    //        .map { fastq_file -> 
-    //            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
-    //            tuple(sample_id, fastq_file)
-    //        }
-    //        .combine(humann_nucleotide_db_ch, humann_protein_db_ch)
-    //        .map { tuple1, nucleotide_db, protein_db ->
-    //            def (sample_id, fastq) = tuple1
-    //            tuple(sample_id, fastq, nucleotide_db, protein_db)
-    //        }
-    //        .view { "Combined: $it" }
-
-
-    //merged_reads.combine(TAXONOMIC_PROFILING.out.profiled_taxa)
-    //            .map { sample_id, reads, profiled_taxa -> 
-    //                tuple(sample_id, reads, profiled_taxa)
-    //            }
-    //.set { functional_inputs }
-
-    
-    //merged_reads.combine(profiled_taxa_mapped)
-    //            .filter { merged, profiled_taxa -> 
-    //                merged[0] == profiled_taxa[0] // Match sample_id
-    //            }
-    //            .map { merged, profiled_taxa -> 
-    //                tuple(merged[0], merged[1], profiled_taxa[1]) // sample_id, reads, taxonomic_profile
-    //            }
-    //            .set { functional_inputs }
-    //functional_inputs.view { "🧪 Functional profiling input: $it" }
-
     FUNCTIONAL_PROFILING (humann_inputs)
+
+
+
+    /*
+        ----------------------------
+        Step 4: CPA analysis
+        ----------------------------
+    */
+    GENERATE_GOTERMS()
+
+    FUNCTIONAL_PROFILING.out.gene_fam
+    .collect()
+    .map { files ->
+        def outdir = file("humann_genefam_dir")
+        outdir.mkdirs()
+        files.each { f -> 
+            def dst = outdir.resolve(f.getName())
+            f.copyTo(dst)
+        }
+        return outdir
+    }
+    .set { humann_genefam_ch }
+    humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
+
+
+    Channel.fromPath(params.samplesheet, checkIfExists: true)
+            .set { samplesheet_file_ch }
+    EXTRACT_METAINFO(samplesheet_file_ch)
+
+    CPA_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
+
+
+
+    /*
+        ----------------------------
+        Step 5: Visualization
+        ----------------------------
+    */
 
 
 
@@ -402,7 +400,6 @@ workflow  {
      * Pipeline event handler
      */
 }
-
 
 
 // End of the Pipeline. Goodbye!

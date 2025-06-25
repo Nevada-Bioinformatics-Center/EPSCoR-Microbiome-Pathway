@@ -1,0 +1,32 @@
+name: cpa
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - r-base
+  - r-data.table
+  - r-pacman
+  - r-pbmcapply
+  - r-rcurl
+  - r-r.utils
+  - r-stringdist
+  - r-stringr
+  - r-ggpattern
+  - r-gridpattern
+  - r-units
+  - r-sf
+  - r-sp
+  - r-rgdal
+  - r-rgeos
+  - r-dbi
+  - r-rpostgresql
+  - r-biocmanager
+  - bioconductor-fgsea
+  - bioconductor-limma
+  - bioconductor-summarizedexperiment
+  - bioconductor-uniprot.ws
+  - r-devtools
+  - gdal
+  - geos
+  - proj

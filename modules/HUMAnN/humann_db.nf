@@ -39,6 +39,7 @@ process DOWNLOAD_HUMANN_PROTEIN_DB {
     tag "humann_database_download: ${prot_database};${prot_build}"
 
     label 'humann_conda'
+    label 'humann_docker'
     label 'medium'
 
     input:

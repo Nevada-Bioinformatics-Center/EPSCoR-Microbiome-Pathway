@@ -40,7 +40,7 @@ process FUNCTIONAL_PROFILING {
         --output "./" \\
         --output-format tsv \\
         --remove-temp-output \\
-        --threads 5 \\
+        --threads 2 \\
         &> ${sample_id}_humann.log
     """
 }
