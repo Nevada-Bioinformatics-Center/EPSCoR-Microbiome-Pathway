@@ -10,11 +10,12 @@
 
 Download the data from [**Open Science Data Repository (OSDR)**](https://www.nasa.gov/osdr/). We are currently using the [_OSD-809_](https://osdr.nasa.gov/bio/repo/data/studies/OSD-809) dataset.
 Description: Effects of an anaerobic membrance bioreactor upset event on nitrogen speciation and microbial community in a downstream phototrophic membrane bioreactor.
-Factors: 'Time'
-Assay: Metagenomic sequencing - Whole Genome Shotgun Sequencing - Illumina Nextera Kit
-Device Platform: Illumina
-Samples: 12
-Sample Type: Paired-end
+
+* Factors: 'Time'
+* Assay: Metagenomic sequencing - Whole Genome Shotgun Sequencing - Illumina Nextera Kit
+* Device Platform: Illumina
+* Samples: 12
+* Sample Type: Paired-end
 
 ## Usage
 
