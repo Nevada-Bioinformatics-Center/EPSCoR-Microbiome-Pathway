@@ -20,7 +20,7 @@ dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 # ---------- Load libraries ---------- #
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 pacman::p_load(tidyverse, RCurl, R.utils, fgsea, pbmcapply, stringr, devtools, BiocManager, 
-               UniProt.ws, stringdist, SummarizedExperiment)
+               UniProt.ws, stringdist, SummarizedExperiment, gridpattern, ggpattern, units, sf)
 devtools::install_github("tinnlab/RCPA")
 library(RCPA)
 

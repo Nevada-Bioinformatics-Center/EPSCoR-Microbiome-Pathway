@@ -63,5 +63,5 @@ GOTerms <- list(
   genesets = genesets,
   names = go_names[names(genesets)]
 )
-saveRDS(GOTerms, goterms_file)
-cat(sprintf("Done! Saved to %s\n", goterms_file))
+saveRDS(GOTerms, "GOTerms.rds")
+cat(sprintf("Done! Saved to %s\n", "GOTerms.rds"))

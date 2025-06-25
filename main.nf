@@ -37,6 +37,7 @@ include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 include { GENERATE_GOTERMS } from './modules/CPA/cpa.nf'
+include { EXTRACT_METAINFO } from './modules/CPA/cpa.nf'
 include { CPA_ANALYSIS } from './modules/CPA/cpa.nf'
 include { RUN_MULTIQC } from './modules/MultiQC/multiqc.nf'
 
@@ -341,9 +342,36 @@ workflow  {
         ----------------------------
     */
     GENERATE_GOTERMS()
-    humann_genefam_ch = FUNCTIONAL_PROFILING.out.gene_fam.collectFile()
-    
-    CPA_ANALYSIS( samples_ch, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
+
+    FUNCTIONAL_PROFILING.out.gene_fam
+    .collect()
+    .map { files ->
+        def outdir = file("humann_genefam_dir")
+        outdir.mkdirs()
+        files.each { f -> 
+            def dst = outdir.resolve(f.getName())
+            f.copyTo(dst)
+        }
+        return outdir
+    }
+    .set { humann_genefam_ch }
+    humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
+
+
+    Channel.fromPath(params.samplesheet, checkIfExists: true)
+            .set { samplesheet_file_ch }
+    EXTRACT_METAINFO(samplesheet_file_ch)
+
+    CPA_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
+
+
+
+    /*
+        ----------------------------
+        Step 5: Visualization
+        ----------------------------
+    */
+
 
 
     /*
@@ -372,8 +400,6 @@ workflow  {
      * Pipeline event handler
      */
 }
-
-
 
 
 // End of the Pipeline. Goodbye!
