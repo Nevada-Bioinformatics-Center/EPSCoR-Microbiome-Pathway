@@ -7,35 +7,7 @@
  */
 
 
-//  This process will join (merge) multiple single-sample output files 
-//  into a single table with multi-samples
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-//process join_tables {
-//    tag "humann_join_tables"
-//    publishDir "${params.output}/humann_out", mode: 'copy'
-
-//    input:
-//        path(genefamilies)
-//        path(pathabundance)
-//        path(pathcoverage)
-
-
-//    output:
-//        path( "joined_genefamilies.tsv" ),  emit: merged_genefamilies
-//        path( "joined_pathabundance.tsv" ), emit: merged_pathabundance
-//        path( "joined_pathcoverage.tsv" ), emit: merged_pathcoverage
-
-//    script:
-//    """
-//    humann_join_tables --input ${genefamilies} --output ${merged_genefamilies}
-//    humann_join_tables --input ${pathabundance} --output ${merged_pathabundance}
-//    humann_join_tables --input ${pathcoverage} --output ${merged_pathcoverage}
-//    """
-//}
-=======
-=======
->>>>>>> Stashed changes
+// This will normalize the pathway abundance to relative abundances
 process NORMALIZE_PATHWAY_ABUNDANCE {
     tag "humann_renorm_table"
 
@@ -55,13 +27,12 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
     --units relab
     """
 }
->>>>>>> Stashed changes
+
 
 
 // This will normalize the merged pathway abundance to relative abundances
 process JOIN_PATHWAY_ABUNDANCE {
     tag "humann_join_tables"
-<<<<<<< Updated upstream
 
     label 'humann_conda'
 
@@ -73,19 +44,6 @@ process JOIN_PATHWAY_ABUNDANCE {
     output:
         path( "joined_norm_pathabundance.tsv" ), emit: join_table
 
-=======
-
-    label 'humann_conda'
-
-    publishDir "${params.output}/humann_out/merge", mode: 'copy'
-
-    input:
-        path(renorm_pathabundance_dir)
-
-    output:
-        path( "joined_norm_pathabundance.tsv" ), emit: join_table
-
->>>>>>> Stashed changes
     script:
     """
     humann_join_tables --input ${renorm_pathabundance_dir} --output joined_norm_pathabundance.tsv
