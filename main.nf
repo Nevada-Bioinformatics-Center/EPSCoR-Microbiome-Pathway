@@ -36,6 +36,9 @@ include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
+include { NORMALIZE_PATHWAY_ABUNDANCE } from './modules/HUMAnN/humann_utility.nf'
+include { JOIN_PATHWAY_ABUNDANCE } from './modules/HUMAnN/humann_utility.nf'
+include { DESC_PROFILING } from './modules/HUMAnN/humann_utility.nf'
 include { GENERATE_GOTERMS } from './modules/CPA/cpa.nf'
 include { EXTRACT_METAINFO } from './modules/CPA/cpa.nf'
 include { CPA_ANALYSIS } from './modules/CPA/cpa.nf'
@@ -86,6 +89,8 @@ workflow  {
             tuple(row.sample, row.factors, [file(row.fastq_1), file(row.fastq_2)])
             }
         
+        def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')
+        def has_factor = samplesheet_header*.trim().contains('factor')
 
 
     /*
@@ -298,6 +303,7 @@ workflow  {
     humann_protein_db_ch.view { "$it" }
 
 
+    // Collect KneadData output FASTQ files and pair with sample IDs
     KNEADING_DATA.out.kneaddata_fastq
         .collectFile()
         .map { fastq_file -> 
@@ -306,7 +312,8 @@ workflow  {
         }
         .set { sample_fastq_ch }
 
-        profiled_taxa
+    // Collect profiled taxa files and pair with sample IDs
+    profiled_taxa
         .collectFile()
         .map { taxa_file ->
             def sample_id = taxa_file.getName().replace('_profile.tsv', '')
@@ -314,35 +321,44 @@ workflow  {
          }
         .set { sample_taxa_ch }
 
-        sample_fastq_ch
+    // Combine sample FASTQ with HUMAnN nucleotide DB
+    sample_fastq_ch
         .combine(humann_nucleotide_db_ch)
         .map { sample_id, reads, nuc_db ->
             tuple(sample_id, reads, nuc_db)
         }
+        // Combine with HUMAnN protein DB
         .combine(humann_protein_db_ch)
         .map { sample_id, reads, nuc_db, prot_db ->
             tuple(sample_id, reads, nuc_db, prot_db)
         }
+        // Join with profiled taxa for each sample
         .join(sample_taxa_ch)
         .map { sample_id, reads, nuc_db, prot_db, taxa ->
             tuple(sample_id, reads, nuc_db, prot_db, taxa)
         }
         .set { humann_inputs }
 
+    // View HUMAnN input tuples for debugging
     humann_inputs.view()
 
-
+    // Run HUMAnN functional profiling
     FUNCTIONAL_PROFILING (humann_inputs)
 
 
+
+   if (has_factor) {
 
     /*
         ----------------------------
         Step 4: CPA analysis
         ----------------------------
     */
+
+    // Generate GO terms from pathway data
     GENERATE_GOTERMS()
 
+    // Collect HUMAnN gene family output files into a directory for CPA input
     FUNCTIONAL_PROFILING.out.gene_fam
     .collect()
     .map { files ->
@@ -357,20 +373,57 @@ workflow  {
     .set { humann_genefam_ch }
     humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
 
-
+    // Extract sample metadata information from the samplesheet
     Channel.fromPath(params.samplesheet, checkIfExists: true)
             .set { samplesheet_file_ch }
     EXTRACT_METAINFO(samplesheet_file_ch)
 
+    // Run CPA analysis
     CPA_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
-
-
+   }
+   else {
 
     /*
-        ----------------------------
-        Step 5: Visualization
-        ----------------------------
+        -------------------------------------
+        Step 5: Descriptive Pathway Profiling
+        -------------------------------------
     */
+
+    // Collect HUMAnN pathway abundance output files and pair with sample IDs
+    FUNCTIONAL_PROFILING.out.path_abundance
+        .collectFile()
+        .map { pathabundance_file -> 
+            def sample_id = pathabundance_file.getBaseName().replace('_pathabundance.tsv', '')
+            tuple(sample_id, pathabundance_file)
+        }
+        .set { pathabundance_ch }
+
+    // Normalize pathway abundance tables
+    NORMALIZE_PATHWAY_ABUNDANCE (pathabundance_ch)
+
+    // Collect normalized pathway abundance files into a directory
+    NORMALIZE_PATHWAY_ABUNDANCE.out.renorm_pathabundance
+        .collect()
+        .map { files ->
+            def outdir = file("humann_renorm_dir")
+            outdir.mkdirs()
+            files.each { f -> 
+                def dst = outdir.resolve(f.getName())
+                f.copyTo(dst)
+            }
+            return outdir
+        }
+        .set { renorm_pathabun_ch }
+
+    renorm_pathabun_ch.view()
+
+    // Join normalized pathway abundance tables
+    JOIN_PATHWAY_ABUNDANCE(renorm_pathabun_ch)
+
+    // Run descriptive profiling
+    DESC_PROFILING(JOIN_PATHWAY_ABUNDANCE.out.join_table)
+
+   }
 
 
 

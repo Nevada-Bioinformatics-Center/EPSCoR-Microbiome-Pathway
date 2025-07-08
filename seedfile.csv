@@ -1,3 +1,5 @@
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 sample,factor,fastq_1,fastq_2
 PMBR-Biofilm-FeedCorner,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R2_HRremoved_raw.fastq.gz
 PMBR-Biofilm-FloatSwitch,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R2_HRremoved_raw.fastq.gz
@@ -11,3 +13,18 @@ PMBR-ReactorContents-Peak-C,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-
 PMBR-ReactorContents-Post-A,161,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-A_S8_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-A_S8_L001_R2_HRremoved_raw.fastq.gz
 PMBR-ReactorContents-Post-B,161,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-B_S9_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-B_S9_L001_R2_HRremoved_raw.fastq.gz
 PMBR-ReactorContents-Post-C,161,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-C_S10_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-ReactorContents-Post-C_S10_L001_R2_HRremoved_raw.fastq.gz
+=======
+=======
+>>>>>>> Stashed changes
+sample,fastq_1,fastq_2
+PMBR-Biofilm-FeedCorner,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R2_HRremoved_raw.fastq.gz
+PMBR-Biofilm-FloatSwitch,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R2_HRremoved_raw.fastq.gz
+PMBR-Biofilm-RecircCorner,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-RecircCorner_S28_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-Biofilm-RecircCorner_S28_L001_R2_HRremoved_raw.fastq.gz
+PMBR-MotherCulture-A,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-A_S5_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-A_S5_L001_R2_HRremoved_raw.fastq.gz
+PMBR-MotherCulture-B,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-B_S6_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-B_S6_L001_R2_HRremoved_raw.fastq.gz
+<<<<<<< Updated upstream
+PMBR-MotherCulture-C,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-C_S7_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-C_S7_L001_R2_HRremoved_raw.fastq.gz
+>>>>>>> Stashed changes
+=======
+PMBR-MotherCulture-C,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-C_S7_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/GLDS-696_metagenomics_PMBR-MotherCulture-C_S7_L001_R2_HRremoved_raw.fastq.gz
+>>>>>>> Stashed changes
