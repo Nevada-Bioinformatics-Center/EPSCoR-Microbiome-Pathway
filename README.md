@@ -8,6 +8,8 @@
 
 ## Dataset
 
+### Data 1
+
 Download the data from [**Open Science Data Repository (OSDR)**](https://www.nasa.gov/osdr/). We are currently using the [_OSD-809_](https://osdr.nasa.gov/bio/repo/data/studies/OSD-809) dataset.
 Description: Effects of an anaerobic membrance bioreactor upset event on nitrogen speciation and microbial community in a downstream phototrophic membrane bioreactor.
 
@@ -17,13 +19,47 @@ Description: Effects of an anaerobic membrance bioreactor upset event on nitroge
 * Samples: 12
 * Sample Type: Paired-end
 
+### Data 2
+
+Download the data from [**SRA**](https://www.ncbi.nlm.nih.gov/sra?linkname=bioproject_sra_all&from_uid=779554).
+
+_BioProject_: PRJNA779554
+Description: Metagenomic analysis of Rhizosphere soil. 
+Publication: "A framework for the targeted recruitment of crop-beneficial soil taxa based on network analysis of metagenomic data." doi: 10.1186/s40168-022-01438-1
+
+* Assay: Shotgun Metagenome Sequencing (WGS)
+* Device Platform: Illumina NovaSeq 6000
+* Samples: 30
+* Sample Type: Paired-end
+
 ## Usage
 
-- Install Nextflow on your system.
-- Create a conda environment and install the **"Biobakery"** packages - **"KneadData"**, **"MetaPhlAn"**, **"HUMAnN"** and **"FastQC"**.
-- Use VSCode for better nextflow editing experience.
+1. Install Nextflow on your system. Please follow the installation guide [_here_](https://nextflow.io/docs/latest/install.html).
+2. Download the datasets or choose your own dataset.
+3. Create a samplesheet in CSV format. Below are two examples of how the samplesheet should look like:
+  
+  Example 1: For dataset with factor (condition) information.
 
-```
+  ```
+  sample,factor,fastq_1,fastq_2
+  SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+  SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+  SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+  ```
+
+  Example 2: For dataset without factor (condition) information.
+
+  ```
+  sample,fastq_1,fastq_2
+  SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+  SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+  SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+  ```
+
+4. Run the command below to execute the pipeline.
+
+  ```
+
 nextflow main.nf \\
             -profile <PROFILE> \\
             --samplesheet path/to/INPUT.csv \\
@@ -36,14 +72,15 @@ nextflow main.nf \\
             --humann_protein_db PROTEIN_DB:BUILD \\
             --humann_prot_db_path /path/to/folder/humann/protein/databases/download \\
             --humann_pathway_db PATHWAY_DB
+
 ```
 
-## Parameter options
+### Parameter options
 
 * `-profile` : Specify the profile to use for running the pipeline in local or on the HPC.
     This can be set to the following:
-    1. _mario_ ( To run the pipeline on local machine, uses separate conda environment for each process )
-    2. _luigi_ ( To run the pipeline on local machine, uses separate docker container for each process )
+    1. _local_ ( To run the pipeline on local machine, uses separate conda environment for each process )
+    2. _cluster_ ( To run the pipeline on HPC, uses separate conda container for each process )
 
 * `--samplesheet` : Path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
 

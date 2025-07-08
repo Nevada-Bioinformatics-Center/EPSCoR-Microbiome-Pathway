@@ -1,0 +1,20 @@
+FROM rocker/r-base
+
+# Install system dependencies for R packages
+RUN apt-get update && apt-get install -y \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libxml2-dev \
+    libgit2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install R packages from CRAN and Bioconductor
+RUN Rscript -e "install.packages(c('data.table', 'R.utils', 'pacman', 'RCurl', 'stringr', 'tidyverse', 'fgsea', 'pbmcapply', 'devtools', 'BiocManager', 'stringdist', 'gridpattern', 'ggpattern', 'units', 'sf'), repos='https://cloud.r-project.org/')"
+RUN Rscript -e "BiocManager::install(c('UniProt.ws', 'SummarizedExperiment'))"
+
+# Copy your R script into the image and make it executable
+COPY bin/cpa.R /usr/local/bin/cpa.R
+RUN chmod +x /usr/local/bin/cpa.R
+
+# Set the default command to bash (so Nextflow can run ./cpa.R ...)
+CMD ["bash"]

@@ -3,6 +3,5 @@ channels:
   - defaults
   - conda-forge
   - bioconda
-  - biobakery
 dependencies:
   - bioconda::multiqc=1.29
