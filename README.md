@@ -6,6 +6,8 @@
 
 ## Introduction
 
+[Pipeline-name], is a scalable and reproducible pipeline designed for comprehensive taxonomic, functional and consensus pathway analysis of metagenomes. Implemented using Nextflow, the pipeline supports scalable execution across local, HPC, and cloud environments. It integrates established tools for quality control, taxonomic, and functional profiling, and introduces a novel consensus-based pathway enrichment strategy that combines multiple statistical methods to improve reliability across experimental conditions. When group comparisons are not defined, the pipeline offers a descriptive profiling mode that links microbial taxa with associated functions. We applied [Pipeline-name] to three distinct metagenomic datasets – including a space habitat study investigating samples from disrupted bioreactor samples, soil rhizosphere samples, and [description of Dr. Frese’s dataset] – demonstrating its versatility and ability to uncover biologically relevant functional patterns.
+
 ## Pipeline Summary
 
 ![](images/pipeline.svg)
@@ -94,17 +96,20 @@ nextflow main.nf \\
 
 * `--kneaddata_db` : Comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2)
 
-    Possible options:
-        - human_transcriptome:bowtie2
-        - ribosomal_RNA:bowtie2
-        - mouse_C57BL:bowtie2
-        - dog_genome:bowtie2
-        - cat_genome:bowtie2
-        - human_genome:bmtagger
+> [!Possible options for `--kneaddata_db`]
+>
+> - human_transcriptome:bowtie2
+> - ribosomal_RNA:bowtie2
+> - mouse_C57BL:bowtie2
+> - dog_genome:bowtie2
+> - cat_genome:bowtie2
+> - human_genome:bmtagger
+
 
 > [!IMPORTANT]
-> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2. This will be fixed in _0.12.3_.
-> You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory. Then, within that directory run the following command: touch `.done`
+> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2. This will be fixed in _0.12.3_. You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory.
+> 
+> Then, within that directory run the following command: `touch .done`
 
 * `--metaphlan_db_path` : Path to the directory where metaphlan databases are saved or will be downloaded (default: ./metaphlan_db/)
 
@@ -116,11 +121,12 @@ nextflow main.nf \\
 
 * `--humann_protein_db` : Comma separated list with no spaces of protein databases for humann to use in database:build format (default: uniref:uniref50_diamond)
 
-    Possible options:
-        - uniref:uniref50_diamond
-        - uniref:uniref90_diamond
-        - uniref:uniref50_ec_filtered_diamond
-        - uniref:uniref90_ec_filtered_diamond
+> [!Possible options for `--humann_protein_db`
+> 
+> - uniref:uniref50_diamond
+> - uniref:uniref90_diamond
+> - uniref:uniref50_ec_filtered_diamond
+> - uniref:uniref90_ec_filtered_diamond
 
 * `--humann_prot_db_path` : Path to the directory where humann protein database is saved or will be downloaded (default: ./humann_protdb/)
 
