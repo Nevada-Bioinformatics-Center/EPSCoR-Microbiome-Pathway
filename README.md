@@ -96,8 +96,8 @@ nextflow main.nf \\
 
 * `--kneaddata_db` : Comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2)
 
-> [!Possible options for `--kneaddata_db`]
->
+> [!NOTE]
+> Possible options:
 > - human_transcriptome:bowtie2
 > - ribosomal_RNA:bowtie2
 > - mouse_C57BL:bowtie2
@@ -105,9 +105,12 @@ nextflow main.nf \\
 > - cat_genome:bowtie2
 > - human_genome:bmtagger
 
-
 > [!IMPORTANT]
-> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2. This will be fixed in _0.12.3_. You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory.
+> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2.
+> 
+> This will be fixed in _0.12.3_.
+> 
+> You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory.
 > 
 > Then, within that directory run the following command: `touch .done`
 
@@ -121,8 +124,8 @@ nextflow main.nf \\
 
 * `--humann_protein_db` : Comma separated list with no spaces of protein databases for humann to use in database:build format (default: uniref:uniref50_diamond)
 
-> [!Possible options for `--humann_protein_db`
-> 
+> [!NOTE]
+> Possible options:
 > - uniref:uniref50_diamond
 > - uniref:uniref90_diamond
 > - uniref:uniref50_ec_filtered_diamond
