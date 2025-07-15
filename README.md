@@ -1,10 +1,14 @@
 # EPSCoR NASA Special Project: Pathway-level, consensus analysis of microbiome profiling data
 
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
+[![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+
+
 ## Introduction
 
 ## Pipeline Summary
 
-![](images/pipeline.png)
+![](images/pipeline.svg)
 
 ## Dataset
 
@@ -34,13 +38,15 @@ Publication: "A framework for the targeted recruitment of crop-beneficial soil t
 
 ## Usage
 
-1. Install Nextflow on your system. Please follow the installation guide [_here_](https://nextflow.io/docs/latest/install.html).
-2. Download the datasets or choose your own dataset.
-3. Create a samplesheet in CSV format. Below are two examples of how the samplesheet should look like:
+> [!NOTE]
+> If you are new to Nextflow, please refer to the [this page](https://nextflow.io/docs/latest/install.html) on how to set-up Nextflow.
+> We have tested the pipeline on the above mentioned datasets. Please, download the datasets or choose your own dataset.
+
+Create a samplesheet in CSV format. Below are two examples of how the samplesheet should look like:
   
   Example 1: For dataset with factor (condition) information.
 
-  ```
+  ```csv
   sample,factor,fastq_1,fastq_2
   SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
   SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
@@ -49,17 +55,16 @@ Publication: "A framework for the targeted recruitment of crop-beneficial soil t
 
   Example 2: For dataset without factor (condition) information.
 
-  ```
+  ```csv
   sample,fastq_1,fastq_2
   SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
   SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
   SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
   ```
 
-4. Run the command below to execute the pipeline.
+1. Run the command below to execute the pipeline.
 
-  ```
-
+  ```bash
 nextflow main.nf \\
             -profile <PROFILE> \\
             --samplesheet path/to/INPUT.csv \\
@@ -69,10 +74,9 @@ nextflow main.nf \\
             --metaphlan_db_path /path/to/folder/metaphlan/database/download \\
             --humann_nucleotide_db NUCLEOTIDE_DB:BUILD \\
             --humann_nuc_db_path /path/to/folder/humann/nucleotide/databases/download \\
-            --humann_protein_db PROTEIN_DB:BUILD \\
-            --humann_prot_db_path /path/to/folder/humann/protein/databases/download \\
-            --humann_pathway_db PATHWAY_DB
-
+            --humann_protein_db <PROTEIN_DB:BUILD> \\
+            --humann_prot_db_path </path/to/folder/humann/protein/databases/download> \\
+            --humann_pathway_db <PATHWAY_DB>
 ```
 
 ### Parameter options
@@ -98,8 +102,9 @@ nextflow main.nf \\
         - cat_genome:bowtie2
         - human_genome:bmtagger
 
-    There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2. This will be fixed in _0.12.3_. You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here 
-    `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory. The within that directory run the following command: touch `.done`
+> [!IMPORTANT]
+> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2. This will be fixed in _0.12.3_.
+> You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory. Then, within that directory run the following command: touch `.done`
 
 * `--metaphlan_db_path` : Path to the directory where metaphlan databases are saved or will be downloaded (default: ./metaphlan_db/)
 
