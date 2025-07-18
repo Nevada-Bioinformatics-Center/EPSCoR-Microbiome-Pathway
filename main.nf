@@ -31,7 +31,7 @@ nextflow.enable.dsl = 2
 
 include { DOWNLOAD_KNEADDATA_DB } from './modules/KneadData/kneaddata_db.nf'
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
-include { DOWNLOAD_METPHLAN_DB } from './modules/MetaPhlAn/metaphlan_db.nf'
+include { DOWNLOAD_METAPHLAN_DB } from './modules/MetaPhlAn/metaphlan_db.nf'
 include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
 include { DOWNLOAD_HUMANN_NUCLEOTIDE_DB } from './modules/HUMAnN/humann_db.nf'
 include { DOWNLOAD_HUMANN_PROTEIN_DB } from './modules/HUMAnN/humann_db.nf'
@@ -89,8 +89,8 @@ workflow  {
             tuple(row.sample, row.factors, [file(row.fastq_1), file(row.fastq_2)])
             }
         
-        def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')
-        def has_factor = samplesheet_header*.trim().contains('factor')
+//        def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')
+//        def has_factor = samplesheet_header*.trim().contains('factor')
 
 
     /*
@@ -132,21 +132,30 @@ workflow  {
         }
     }
 
-    // Kneaddata database channel
-    Channel
-        .fromList(db_combinations)
-        .map { db, build -> 
-            def outdir = "${params.kneaddata_db_path}/${db}_${build}".replaceAll(/\/+/, '/')
-            tuple(db, build, outdir)
-        }
-        .set { db_inputs }
-    
+// Define DB combinations with expected paths
+Channel
+    .fromList(db_combinations)
+    .map { db, build ->
+        def db_dir = "${params.database}/kneaddata_db/${db}_${build}"
+        def done_file = file("${db_dir}")
+        tuple(db, build, db_dir, done_file.exists())
+    }
+    .set { db_inputs_with_check }
 
-    // Download Kneaddata database
-    DOWNLOAD_KNEADDATA_DB(db_inputs)
-        .collect()
-        .map { db_list -> [ db_list ] }
-        .set { kneaddata_db_ch }
+// split into two channels: exists or not exists
+db_exists_ch = db_inputs_with_check
+    .filter { _db, _build, _db_dir, exists -> exists }
+    .map { _db, _build, db_dir, _exists -> file(db_dir) }
+
+db_not_exists_ch = db_inputs_with_check
+    .filter { _db, _build, _db_dir, exists -> !exists }
+    .map { db, build, _db_dir, _exists -> tuple(db, build) }
+    | DOWNLOAD_KNEADDATA_DB
+
+// Merge both channels (existing + downloaded)
+kneaddata_db_ch = db_exists_ch.mix(db_not_exists_ch)
+    .collect()
+    .map { db_list -> [db_list] }
 
 
     // Combine reads + database
@@ -180,13 +189,11 @@ workflow  {
         --------------------------
     */
 
-    // Channel for MetaPhlAn database path
-    Channel.value(params.metaphlan_db_path).set { metaphlan_db_dir_ch }
-
     // Download MetaPhlAn database
-    DOWNLOAD_METPHLAN_DB(metaphlan_db_dir_ch)
+    DOWNLOAD_METAPHLAN_DB()
 
-    DOWNLOAD_METPHLAN_DB.out.metaphlan_db_dir
+    // Emit the MetaPhlAn database directory as queue channel
+    Channel.value("${params.database}/metaphlan_db")
         .set { metaphlan_db_dir_out_ch }
 
     metaphlan_db_dir_out_ch.view {"$it"}
@@ -209,7 +216,7 @@ workflow  {
     // Run MetaPhlAn for taxonomic profiling
     TAXONOMIC_PROFILING(metaphlan_inputs)
 
-    TAXONOMIC_PROFILING.out.profiled_taxa.set { profiled_taxa }
+//    TAXONOMIC_PROFILING.out.profiled_taxa.set { profiled_taxa }
 
 
 
@@ -220,134 +227,128 @@ workflow  {
     */
     
     // Define valid database types for HUMAnN
-    def valid_humann_db_options = [
-        "chocophlan" : ["full"],
-        "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond"]
-    ]
+//    def valid_humann_db_options = [
+//        "chocophlan" : ["full"],
+//        "uniref" : ["uniref50_diamond", "uniref90_diamond", "uniref50_ec_filtered_diamond", "uniref90_ec_filtered_diamond"]
+//    ]
 
     // Validate and process the humann nucleotide database parameter
-    if (params.humann_nucleotide_db) {
-        def nucleotide_db_combo = params.humann_nucleotide_db
-            .split(',')
-            .collect { it.tokenize(':') } //split each entry [db, build]
+//    if (params.humann_nucleotide_db) {
+//        def nucleotide_db_combo = params.humann_nucleotide_db
+//            .split(',')
+//            .collect { it.tokenize(':') } //split each entry [db, build]
 
-            nucleotide_db_combo.each { entry ->
-                if (entry.size() != 2) {
-                    exit 1, "❌ Invalid humann nucleotide database entry: '${entry.join(':')}'. Must be in format: <nuc_db>:<nuc_build>"
-                }
-                def (nuc_db, nuc_build) = entry
-                if (!valid_humann_db_options.containsKey(nuc_db)) {
-                    exit 1, "❌ Unknown database: '${nuc_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
-                }
-                if (!(nuc_build in valid_humann_db_options[nuc_db])) {
-                    exit 1, "❌ Invalid build '${nuc_build}' for database '${nuc_db}'. Allowed builds: ${valid_humann_db_options[nuc_db].join(', ')}"
-                }
-            }
+//            nucleotide_db_combo.each { entry ->
+//                if (entry.size() != 2) {
+//                    exit 1, "❌ Invalid humann nucleotide database entry: '${entry.join(':')}'. Must be in format: <nuc_db>:<nuc_build>"
+//                }
+//                def (nuc_db, nuc_build) = entry
+//                if (!valid_humann_db_options.containsKey(nuc_db)) {
+//                    exit 1, "❌ Unknown database: '${nuc_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
+//                }
+//                if (!(nuc_build in valid_humann_db_options[nuc_db])) {
+//                    exit 1, "❌ Invalid build '${nuc_build}' for database '${nuc_db}'. Allowed builds: ${valid_humann_db_options[nuc_db].join(', ')}"
+//                }
+//            }
 
-            Channel.fromList(nucleotide_db_combo)
-                .map { db, build -> 
-                    def outdir = "${params.humann_nuc_db_path}".replaceAll(/\/+/, '/')
-                    tuple( db, build, outdir )
-                }
-                .set { nucleotide_db_inputs }
+//            Channel.fromList(nucleotide_db_combo)
+//                .map { db, build -> tuple( db, build ) }
+//                .set { nucleotide_db_inputs }
 
             // Download HUMAnN nucleotide database
-            DOWNLOAD_HUMANN_NUCLEOTIDE_DB(nucleotide_db_inputs)
-                .collect()
-                .map { db_list -> [db_list] }
-                .set { humann_nucleotide_db_ch }
-    }
-    else {
-        println "⚠️ HUMAnN nucleotide database not provided. Functional profiling may not work as expected."
-    }
+//            DOWNLOAD_HUMANN_NUCLEOTIDE_DB(nucleotide_db_inputs)
+//                .collect()
+//                .map { db_list -> [db_list] }
+//                .set { humann_nucleotide_db_ch }
+//    }
+//    else {
+//        println "⚠️ HUMAnN nucleotide database not provided. Functional profiling may not work as expected."
+//    }
 
-    humann_nucleotide_db_ch.view { "$it" }
+//    humann_nucleotide_db_ch.view { "$it" }
 
     
     // Validate and process the humann protein database parameter
-    if (params.humann_protein_db) {
-        def protein_db_combo = params.humann_protein_db
-            .split(',')
-            .collect { it.tokenize(':') } //split each entry [db, build]
+//    if (params.humann_protein_db) {
+//        def protein_db_combo = params.humann_protein_db
+//            .split(',')
+//            .collect { it.tokenize(':') } //split each entry [db, build]
 
-            protein_db_combo.each { entry ->
-                if (entry.size() != 2) {
-                    exit 1, "❌ Invalid humann protein database entry: '${entry.join(':')}'. Must be in format: <prot_db>:<prot_build>"
-                }
-                def (prot_db, prot_build) = entry
-                if (!valid_humann_db_options.containsKey(prot_db)) {
-                    exit 1, "❌ Unknown database: '${prot_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
-                }
-                if (!(prot_build in valid_humann_db_options[prot_db])) {
-                    exit 1, "❌ Invalid build '${prot_build}' for database '${prot_db}'. Allowed builds: ${valid_humann_db_options[prot_db].join(', ')}"
-                }
-            }
+//            protein_db_combo.each { entry ->
+//                if (entry.size() != 2) {
+//                    exit 1, "❌ Invalid humann protein database entry: '${entry.join(':')}'. Must be in format: <prot_db>:<prot_build>"
+//                }
+//                def (prot_db, prot_build) = entry
+//                if (!valid_humann_db_options.containsKey(prot_db)) {
+//                    exit 1, "❌ Unknown database: '${prot_db}'. Must be one of: ${valid_humann_db_options.keySet().join(', ')}"
+//                }
+//                if (!(prot_build in valid_humann_db_options[prot_db])) {
+//                    exit 1, "❌ Invalid build '${prot_build}' for database '${prot_db}'. Allowed builds: ${valid_humann_db_options[prot_db].join(', ')}"
+//                }
+//            }
 
-            Channel.fromList(protein_db_combo)
-                .map { db, build -> 
-                    def outdir = "${params.humann_prot_db_path}".replaceAll(/\/+/, '/')
-                    tuple( db, build, outdir )
-                }
-                .set { protein_db_inputs }
+//            Channel.fromList(protein_db_combo)
+//                .map { db, build -> tuple( db, build ) }
+//                .set { protein_db_inputs }
 
             // Download HUMAnN protien database
-            DOWNLOAD_HUMANN_PROTEIN_DB(protein_db_inputs)
-                .collect()
-                .map { db_list -> [db_list] }
-                .set { humann_protein_db_ch }
-    }
-    else {
-        println "⚠️ HUMAnN protein database not provided. Functional profiling may not work as expected."
-    }
+//            DOWNLOAD_HUMANN_PROTEIN_DB(protein_db_inputs)
+//                .collect()
+//                .map { db_list -> [db_list] }
+//                .set { humann_protein_db_ch }
+//    }
+//    else {
+//        println "⚠️ HUMAnN protein database not provided. Functional profiling may not work as expected."
+//    }
 
-    humann_protein_db_ch.view { "$it" }
+//    humann_protein_db_ch.view { "$it" }
 
 
     // Collect KneadData output FASTQ files and pair with sample IDs
-    KNEADING_DATA.out.kneaddata_fastq
-        .collectFile()
-        .map { fastq_file -> 
-            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
-            tuple(sample_id, fastq_file)
-        }
-        .set { sample_fastq_ch }
+//    KNEADING_DATA.out.kneaddata_fastq
+//        .collectFile()
+//        .map { fastq_file -> 
+//            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+//            tuple(sample_id, fastq_file)
+//        }
+//        .set { sample_fastq_ch }
 
     // Collect profiled taxa files and pair with sample IDs
-    profiled_taxa
-        .collectFile()
-        .map { taxa_file ->
-            def sample_id = taxa_file.getName().replace('_profile.tsv', '')
-            tuple(sample_id, taxa_file)
-         }
-        .set { sample_taxa_ch }
+//    profiled_taxa
+//        .collectFile()
+//        .map { taxa_file ->
+//            def sample_id = taxa_file.getName().replace('_profile.tsv', '')
+//            tuple(sample_id, taxa_file)
+//         }
+//        .set { sample_taxa_ch }
 
     // Combine sample FASTQ with HUMAnN nucleotide DB
-    sample_fastq_ch
-        .combine(humann_nucleotide_db_ch)
-        .map { sample_id, reads, nuc_db ->
-            tuple(sample_id, reads, nuc_db)
-        }
+//    sample_fastq_ch
+//        .combine(humann_nucleotide_db_ch)
+//        .map { sample_id, reads, nuc_db ->
+//            tuple(sample_id, reads, nuc_db)
+//        }
         // Combine with HUMAnN protein DB
-        .combine(humann_protein_db_ch)
-        .map { sample_id, reads, nuc_db, prot_db ->
-            tuple(sample_id, reads, nuc_db, prot_db)
-        }
+//        .combine(humann_protein_db_ch)
+//        .map { sample_id, reads, nuc_db, prot_db ->
+//            tuple(sample_id, reads, nuc_db, prot_db)
+//        }
         // Join with profiled taxa for each sample
-        .join(sample_taxa_ch)
-        .map { sample_id, reads, nuc_db, prot_db, taxa ->
-            tuple(sample_id, reads, nuc_db, prot_db, taxa)
-        }
-        .set { humann_inputs }
+//        .join(sample_taxa_ch)
+//        .map { sample_id, reads, nuc_db, prot_db, taxa ->
+//            tuple(sample_id, reads, nuc_db, prot_db, taxa)
+//        }
+//        .set { humann_inputs }
 
     // View HUMAnN input tuples for debugging
-    humann_inputs.view()
+//    humann_inputs.view()
 
     // Run HUMAnN functional profiling
-    FUNCTIONAL_PROFILING (humann_inputs)
+//    FUNCTIONAL_PROFILING (humann_inputs)
 
 
 
-   if (has_factor) {
+//   if (has_factor) {
 
     /*
         ----------------------------
@@ -356,32 +357,32 @@ workflow  {
     */
 
     // Generate GO terms from pathway data
-    GENERATE_GOTERMS()
+//    GENERATE_GOTERMS()
 
     // Collect HUMAnN gene family output files into a directory for CPA input
-    FUNCTIONAL_PROFILING.out.gene_fam
-    .collect()
-    .map { files ->
-        def outdir = file("humann_genefam_dir")
-        outdir.mkdirs()
-        files.each { f -> 
-            def dst = outdir.resolve(f.getName())
-            f.copyTo(dst)
-        }
-        return outdir
-    }
-    .set { humann_genefam_ch }
-    humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
+//    FUNCTIONAL_PROFILING.out.gene_fam
+//    .collect()
+//    .map { files ->
+//        def outdir = file("humann_genefam_dir")
+//        outdir.mkdirs()
+//        files.each { f -> 
+//            def dst = outdir.resolve(f.getName())
+//            f.copyTo(dst)
+//        }
+//        return outdir
+//    }
+//    .set { humann_genefam_ch }
+//    humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
 
     // Extract sample metadata information from the samplesheet
-    Channel.fromPath(params.samplesheet, checkIfExists: true)
-            .set { samplesheet_file_ch }
-    EXTRACT_METAINFO(samplesheet_file_ch)
+//    Channel.fromPath(params.samplesheet, checkIfExists: true)
+//            .set { samplesheet_file_ch }
+//    EXTRACT_METAINFO(samplesheet_file_ch)
 
     // Run CPA analysis
-    CPA_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
-   }
-   else {
+//    CPA_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, GENERATE_GOTERMS.out.goterms)
+//   }
+//   else {
 
     /*
         -------------------------------------
@@ -390,40 +391,40 @@ workflow  {
     */
 
     // Collect HUMAnN pathway abundance output files and pair with sample IDs
-    FUNCTIONAL_PROFILING.out.path_abundance
-        .collectFile()
-        .map { pathabundance_file -> 
-            def sample_id = pathabundance_file.getBaseName().replace('_pathabundance.tsv', '')
-            tuple(sample_id, pathabundance_file)
-        }
-        .set { pathabundance_ch }
+//    FUNCTIONAL_PROFILING.out.path_abundance
+//        .collectFile()
+//        .map { pathabundance_file -> 
+//            def sample_id = pathabundance_file.getBaseName().replace('_pathabundance.tsv', '')
+//            tuple(sample_id, pathabundance_file)
+//        }
+//        .set { pathabundance_ch }
 
     // Normalize pathway abundance tables
-    NORMALIZE_PATHWAY_ABUNDANCE (pathabundance_ch)
+//    NORMALIZE_PATHWAY_ABUNDANCE (pathabundance_ch)
 
     // Collect normalized pathway abundance files into a directory
-    NORMALIZE_PATHWAY_ABUNDANCE.out.renorm_pathabundance
-        .collect()
-        .map { files ->
-            def outdir = file("humann_renorm_dir")
-            outdir.mkdirs()
-            files.each { f -> 
-                def dst = outdir.resolve(f.getName())
-                f.copyTo(dst)
-            }
-            return outdir
-        }
-        .set { renorm_pathabun_ch }
+//    NORMALIZE_PATHWAY_ABUNDANCE.out.renorm_pathabundance
+//        .collect()
+//        .map { files ->
+//            def outdir = file("humann_renorm_dir")
+//            outdir.mkdirs()
+//            files.each { f -> 
+//                def dst = outdir.resolve(f.getName())
+//                f.copyTo(dst)
+//            }
+//            return outdir
+//        }
+//        .set { renorm_pathabun_ch }
 
-    renorm_pathabun_ch.view()
+//    renorm_pathabun_ch.view()
 
     // Join normalized pathway abundance tables
-    JOIN_PATHWAY_ABUNDANCE(renorm_pathabun_ch)
+//    JOIN_PATHWAY_ABUNDANCE(renorm_pathabun_ch)
 
     // Run descriptive profiling
-    DESC_PROFILING(JOIN_PATHWAY_ABUNDANCE.out.join_table)
+//    DESC_PROFILING(JOIN_PATHWAY_ABUNDANCE.out.join_table)
 
-   }
+//   }
 
 
 
@@ -434,19 +435,19 @@ workflow  {
     */
 
     // Run multiqc
-    RUN_MULTIQC(
-        KNEADING_DATA.out.kneaddata_fastqc_zip.mix(
-            KNEADING_DATA.out.kneaddata_fastq,
-            KNEADING_DATA.out.kneaddata_log,
-            KNEADING_DATA.out.kneaddata_fastqc_html,
-            TAXONOMIC_PROFILING.out.profiled_taxa,
-            TAXONOMIC_PROFILING.out.metaphlan_log,
-            FUNCTIONAL_PROFILING.out.gene_fam,
-            FUNCTIONAL_PROFILING.out.path_abundance,
-            FUNCTIONAL_PROFILING.out.path_coverage,
-            FUNCTIONAL_PROFILING.out.humann_log
-        ).collect()
-    )
+//    RUN_MULTIQC(
+//        KNEADING_DATA.out.kneaddata_fastqc_zip.mix(
+//            KNEADING_DATA.out.kneaddata_fastq,
+//            KNEADING_DATA.out.kneaddata_log,
+//            KNEADING_DATA.out.kneaddata_fastqc_html,
+//            TAXONOMIC_PROFILING.out.profiled_taxa,
+//            TAXONOMIC_PROFILING.out.metaphlan_log,
+//            FUNCTIONAL_PROFILING.out.gene_fam,
+//            FUNCTIONAL_PROFILING.out.path_abundance,
+//            FUNCTIONAL_PROFILING.out.path_coverage,
+//            FUNCTIONAL_PROFILING.out.humann_log
+//        ).collect()
+//    )
 
 
     /*

@@ -19,19 +19,22 @@ process GENERATE_GOTERMS {
         path ("gene2go.gz")
         path ("All_Data.gene_info.gz")
         path ("go.obo")
+        path (".done")
     
     script:
     """
-    # Download files if not present
-    [ -f gene2go.gz ] || wget -O gene2go.gz https://ftp.ncbi.nih.gov/gene/DATA/gene2go.gz
-    [ -f All_Data.gene_info.gz ] || wget -O All_Data.gene_info.gz https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz
-    [ -f go.obo ] || wget -O go.obo http://purl.obolibrary.org/obo/go.obo
+    db_dir="."
+    
+    if [ ! -f "\$db_dir/.done" ]; then
+        echo "Downloading and generating GO term resources in \$db_dir"
+        [ -f gene2go.gz ] || wget -O gene2go.gz https://ftp.ncbi.nih.gov/gene/DATA/gene2go.gz
+        [ -f All_Data.gene_info.gz ] || wget -O All_Data.gene_info.gz https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz
+        [ -f go.obo ] || wget -O go.obo http://purl.obolibrary.org/obo/go.obo
 
-    if [ ! -f GOTerms.rds ]; then
-        echo "Generating GOTerms.rds in goterms"
         goterms.R GOTerms.rds gene2go.gz All_Data.gene_info.gz go.obo
+        touch .done
     else
-        echo "GOTerms.rds already exists in goterms, skipping generation."
+        echo "GOTerms.rds already exists in \$db_dir, skipping download and generation."
     fi
     """
 }

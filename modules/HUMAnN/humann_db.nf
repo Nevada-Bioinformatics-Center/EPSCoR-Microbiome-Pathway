@@ -14,22 +14,24 @@ process DOWNLOAD_HUMANN_NUCLEOTIDE_DB {
     label 'humann_docker'
     label 'medium'
 
+    publishDir "${params.output}/humann_nucdb", mode: 'symlink'
+
     input:
-    tuple val(nuc_database), val(nuc_build), val(install_dir)
+        tuple val(nuc_database), val(nuc_build)
 
     output:
-    val("${install_dir}/${nuc_database}"), emit: downloaded_nucleotide_db  // Output just the path string
+        path("${nuc_database}_${nuc_build}"), emit: downloaded_nucleotide_db  // Output just the path string
+
+    when:
+        ! file("${params.database}/humann_nucdb/${nuc_database}_${nuc_build}").exists()
 
     script:
     """
-    if [ ! -f "${install_dir}/.done" ]; then
-        echo "Downloading ${nuc_database} ${nuc_build} to ${install_dir}"
-        mkdir -p ${install_dir}
-        humann_databases --download ${nuc_database} ${nuc_build} ${install_dir}
-        touch ${install_dir}/.done
-    else
-        echo "Database already exists at ${install_dir}, skipping download."
-    fi
+    db_dir="${nuc_database}_${nuc_build}"
+
+    mkdir -p "\$db_dir"
+
+    humann_databases --download ${nuc_database} ${nuc_build} "\$db_dir"
     """
 }
 
@@ -42,21 +44,23 @@ process DOWNLOAD_HUMANN_PROTEIN_DB {
     label 'humann_docker'
     label 'medium'
 
+    publishDir "${params.output}/humann_protdb", mode: 'copy'
+
     input:
-    tuple val(prot_database), val(prot_build), val(install_dir)
+        tuple val(prot_database), val(prot_build)
 
     output:
-    val("${install_dir}/${prot_database}"), emit: downloaded_nucleotide_db  // Output just the path string
+        val("${prot_database}_${prot_build}"), emit: downloaded_nucleotide_db  // Output just the path string
+
+    when:
+        ! file("${params.database}/humann_protdb/${prot_database}_${prot_build}").exists()
 
     script:
     """
-    if [ ! -f "${install_dir}/.done" ]; then
-        echo "Downloading ${prot_database} ${prot_build} to ${install_dir}"
-        mkdir -p ${install_dir}
-        humann_databases --download ${prot_database} ${prot_build} ${install_dir}
-        touch ${install_dir}/.done
-    else
-        echo "Database already exists at ${install_dir}, skipping download."
-    fi
+    db_dir="${prot_database}_${prot_build}"
+
+    mkdir -p "\$db_dir"
+        
+    humann_databases --download ${prot_database} ${prot_build} "\$db_dir"
     """
 }

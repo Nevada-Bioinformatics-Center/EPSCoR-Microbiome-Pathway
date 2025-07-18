@@ -17,7 +17,7 @@ process TAXONOMIC_PROFILING {
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
     input:
-        tuple val(sample_id), path(merged_fastq), path(metaphlan_db_dir)
+        tuple val(sample_id), path(merged_fastq), val(metaphlan_db_dir)
 
     output:
         path("${sample_id}_profile.txt"), emit: profiled_taxa
@@ -34,6 +34,7 @@ process TAXONOMIC_PROFILING {
         --output_file ${sample_id}_profile.txt \\
         --mapout ${sample_id}_bowtie2.bz2 \\
         --nproc 2 \\
+        --offline \\
         &> ${sample_id}_metaphlan.log
     """
 }
