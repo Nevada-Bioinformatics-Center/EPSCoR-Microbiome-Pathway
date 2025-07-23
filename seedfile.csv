@@ -1,4 +1,4 @@
-sample,factor,fastq_1,fastq_2
+sample,exp_conditions,fastq_1,fastq_2
 PMBR-Biofilm-FeedCorner,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-FeedCorner_S29_L001_R2_HRremoved_raw.fastq.gz
 PMBR-Biofilm-FloatSwitch,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-FloatSwitch_S27_L001_R2_HRremoved_raw.fastq.gz
 PMBR-Biofilm-RecircCorner,101,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-RecircCorner_S28_L001_R1_HRremoved_raw.fastq.gz,/home/kmanna/Documents/GitHub/EPSCoR-Microbiome-Pathway/data/osd-809/GLDS-696_metagenomics_PMBR-Biofilm-RecircCorner_S28_L001_R2_HRremoved_raw.fastq.gz

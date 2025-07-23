@@ -18,13 +18,30 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
+# Read the file as a plain table to check for taxonomy
+tab <- read.table(input_file, header=TRUE, sep="\t", comment.char = "", check.names = FALSE)
+# Remove leading '#' from column name if present
+colnames(tab)[1] <- sub("^#\\s*", "", colnames(tab)[1])
+
+# If only UNMAPPED/UNINTEGRATED, or no taxonomy in first column, skip
+if (all(tab[[1]] %in% c("UNMAPPED", "UNINTEGRATED")) ||
+    !any(grepl("\\|", tab[[1]]))) {
+    message("No taxonomy data found. Skipping descriptive profiling.")
+    file.create(genus_out)
+    file.create(species_out)
+    quit(save = "no", status = 0)
+}
+
 # Import HUMAnN joined pathway abundance table
 se <- importHUMAnN(input_file)
-
-# Get the abundance matrix and pathway-taxa info & combine 
 abund <- assay(se)
 df <- as.data.frame(rowData(se))
 df <- cbind(df, as.matrix(abund))
+
+# Ensure relevant columns are character
+if ("Pathway" %in% colnames(df)) df$Pathway <- as.character(df$Pathway)
+if ("genus" %in% colnames(df)) df$genus <- as.character(df$genus)
+if ("species" %in% colnames(df)) df$species <- as.character(df$species)
 
 # For each pathway, find the genus with the highest total abundance
 top_genus_per_pathway <- df %>% 

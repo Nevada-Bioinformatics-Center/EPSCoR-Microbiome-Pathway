@@ -3,7 +3,6 @@
  * Description: This module performs kneading of metagenomic data.
  * Version: v0.12.2
  * Author: Kanishka Manna
- * Date: 2025-04-09
  */
 
 process KNEADING_DATA {
@@ -16,29 +15,29 @@ process KNEADING_DATA {
     publishDir "${params.output}/kneaddata_out", mode: 'copy'
 
     input:
-        tuple val(sample_id), path(read), val(kneaddata_db_paths) 
+        tuple val(sample_id), path(read), path(kneaddata_db_paths) 
 
     output:
-        path( "*.fastq" ),   emit: kneaddata_fastq
-        path( "*.log" ),        emit: kneaddata_log
-        path( "fastqc/${sample_id}*.html" ),        emit: kneaddata_fastqc_html
-        path( "fastqc/${sample_id}*.zip" ),        emit: kneaddata_fastqc_zip
+        path( "*.fastq" ),  emit: kneaddata_fastq
+        path( "*.log" ),    emit: kneaddata_log
+        path( "fastqc/${sample_id}*.html" ),    emit: kneaddata_fastqc_html
+        path( "fastqc/${sample_id}*.zip" ), emit: kneaddata_fastqc_zip
 
     script:
-        def db_flags = kneaddata_db_paths.collect { "--reference-db ${it}" }.join(' ')
         """
         kneaddata \
         --input1 ${read[0]} \
         --input2 ${read[1]} \
-        --threads 4 \
-        --processes 2 \
-        ${db_flags} \
+        --threads ${params.kneaddata_threads} \
+        --processes ${params.kneaddata_processes} \
+        --reference-db ${kneaddata_db_paths} \
         --output  "./" \
         --output-prefix ${sample_id} \
         --run-fastqc-start \
         --run-fastqc-end \
         --remove-intermediate-output \
         --cat-final-output \
+        ${params.kneaddata_extra} \
         --log ${sample_id}_kneaddata.log
         """
 }

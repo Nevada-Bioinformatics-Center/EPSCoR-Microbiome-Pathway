@@ -27,8 +27,8 @@ library(RCPA)
 
 # ---------- Load metadata ---------- #
 meta <- read.csv(samplesheet, sep = ",", stringsAsFactors = FALSE)
-if (!"factor" %in% colnames(meta)) stop("No 'factor' column found in samplesheet.")
-factor <- meta$factor
+if (!"exp_conditions" %in% colnames(meta)) stop("No 'exp_conditions' column found in samplesheet.")
+factor <- meta$exp_conditions
 
 
 # ---------- Load GO Terms ---------- #

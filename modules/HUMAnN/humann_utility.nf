@@ -53,12 +53,12 @@ process JOIN_PATHWAY_ABUNDANCE {
 
 
 // This process will generate descriptive statistics for the pathway abundance
-process DESC_PROFILING {
+process DESCRIPTIVE_PROFILING {
     tag "Descriptive Profiling"
 
     label 'desc_conda'
 
-    publishDir "${params.output}/humann_out/desc", mode: 'copy'
+    publishDir "${params.output}/desc_out", mode: 'copy'
 
     input:
         path(joined_pathabundance)

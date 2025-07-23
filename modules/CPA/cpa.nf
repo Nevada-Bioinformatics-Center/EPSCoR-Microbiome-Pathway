@@ -13,13 +13,21 @@ process GENERATE_GOTERMS {
     label 'go_term_conda'
     label 'medium'
 
-    publishDir "${params.output}/goterms", mode: 'copy'
+    publishDir "${params.goterm_db}", mode: 'symlink'
+
     output:
         path ("GOTerms.rds"), emit: goterms
         path ("gene2go.gz")
         path ("All_Data.gene_info.gz")
         path ("go.obo")
         path (".done")
+    
+    when:
+        ! file("${params.goterm_db}/GOTerms.rds").exists() || 
+        ! file("${params.goterm_db}/gene2go.gz").exists() || 
+        ! file("${params.goterm_db}/All_Data.gene_info.gz").exists() || 
+        ! file("${params.goterm_db}/go.obo").exists() ||
+        ! file("${params.goterm_db}/.done").exists()
     
     script:
     """
@@ -63,7 +71,7 @@ process EXTRACT_METAINFO {
 
 
 // Process to run CPA analysis
-process CPA_ANALYSIS {
+process CONSENSUS_PATHWAY_ANALYSIS {
     tag "Consensus Pathway Analysis"
 
     label 'cpa_conda'
