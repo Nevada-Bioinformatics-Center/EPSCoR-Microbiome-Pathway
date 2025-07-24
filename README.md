@@ -6,8 +6,6 @@
 
 ## Introduction
 
-[Pipeline-name], is a scalable and reproducible pipeline designed for comprehensive taxonomic, functional and consensus pathway analysis of metagenomes. Implemented using Nextflow, the pipeline supports scalable execution across local, HPC, and cloud environments. It integrates established tools for quality control, taxonomic, and functional profiling, and introduces a novel consensus-based pathway enrichment strategy that combines multiple statistical methods to improve reliability across experimental conditions. When group comparisons are not defined, the pipeline offers a descriptive profiling mode that links microbial taxa with associated functions. We applied [Pipeline-name] to three distinct metagenomic datasets – including a space habitat study investigating samples from disrupted bioreactor samples, soil rhizosphere samples, and [description of Dr. Frese’s dataset] – demonstrating its versatility and ability to uncover biologically relevant functional patterns.
-
 ## Pipeline Summary
 
 ![](images/pipeline.svg)
@@ -38,31 +36,15 @@ Publication: "A framework for the targeted recruitment of crop-beneficial soil t
 * Samples: 30
 * Sample Type: Paired-end
 
-## Usage
+## Installation
 
 > [!NOTE]
 > If you are new to Nextflow, please refer to the [this page](https://nextflow.io/docs/latest/install.html) on how to set-up Nextflow.
 > We have tested the pipeline on the above mentioned datasets. Please, download the datasets or choose your own dataset.
 
-Create a samplesheet in CSV format. Below are two examples of how the samplesheet should look like:
-  
-  Example 1: For dataset with factor (condition) information.
+## Usage
 
-  ```csv
-  sample,factor,fastq_1,fastq_2
-  SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
-  SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
-  SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-  ```
-
-  Example 2: For dataset without factor (condition) information.
-
-  ```csv
-  sample,fastq_1,fastq_2
-  SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
-  SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
-  SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-  ```
+### Basic Usage
 
 1. Run the command below to execute the pipeline.
 
@@ -71,76 +53,92 @@ nextflow main.nf \\
             -profile <PROFILE> \\
             --samplesheet path/to/INPUT.csv \\
             --output /path/to/OUTPUT_DIR \\
-            --kneaddata_db_path /path/to/folder/kneaddata/database/download/ \\
-            --kneaddata_db REFERENCE_DB:BUILD \\
-            --metaphlan_db_path /path/to/folder/metaphlan/database/download \\
-            --humann_nucleotide_db NUCLEOTIDE_DB:BUILD \\
-            --humann_nuc_db_path /path/to/folder/humann/nucleotide/databases/download \\
-            --humann_protein_db <PROTEIN_DB:BUILD> \\
-            --humann_prot_db_path </path/to/folder/humann/protein/databases/download> \\
-            --humann_pathway_db <PATHWAY_DB>
+            --kneaddata_db /path/to/folder/kneaddata/database/download/ \\
+            --metaphlan_db /path/to/folder/metaphlan/database/download \\
+            --humann_nucleotide_db /path/to/folder/humann/nucleotide/databases/download \\
+            --humann_protein_db /path/to/folder/humann/protein/databases/download \\
+            --humann_pathway_db <PATHWAY_DB> \\
+            --go_term_db /path/to/folder/go-term/database/download
 ```
 
-### Parameter options
+### Parameters
 
-* `-profile` : Specify the profile to use for running the pipeline in local or on the HPC.
-    This can be set to the following:
-    1. _local_ ( To run the pipeline on local machine, uses separate conda environment for each process )
-    2. _cluster_ ( To run the pipeline on HPC, uses separate conda container for each process )
+#### Required parameters
 
-* `--samplesheet` : Path to a CSV file where each row specifies the sample name and the file paths to paired-end FASTQ files (R1 and R2), separated by commas.
+| Parameter      | Default              | Description                                                                                              | Options             |
+|----------------|----------------------|----------------------------------------------------------------------------------------------------------|---------------------|
+| `-profile`     | `local`              | Specify the profile to use for running the pipeline                                                      | `local` , `cluster` |
+| `--samplesheet`| NULL                 | Path to a CSV file listing sample names and paired-end FASTQ file paths (R1 and R2), separated by commas |         -           |
+| `--output`     | `${baseDir}/results` | Path to the output directory where results will be saved                                                 |         -           |
 
-* `--output` : Path to the output directory where results will be saved.
+#### KneadData parameters
 
-* `--kneaddata_db_path` : Path to saved or where to save kneaddata databases (default: ./kneaddata_db/)
+| Parameter              | Default | Description                                                                                              | Options |
+|------------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
+| `--kneaddata_db`       | NULL    | Path to the directory where the KneadData database is located                                            |    -    |
+| `--kneaddata_threads`  |    4    | Specify the number of threads                                                                            |    -    |
+| `--kneaddata_processes`|    2    | Specify the number of processes                                                                          |    -    |
+| `--kneaddata_extra`    |    -    | User specified extra parameter options                                                                   |    -    |
 
-* `--kneaddata_db` : Comma seperated list with no spaces of databases for kneadata to use in database:build format  (default: human_transcriptome:bowtie2,ribosomal_RNA:bowtie2)
+#### Metaphlan parameters
 
-> [!NOTE]
-> Possible options:
-> - human_transcriptome:bowtie2
-> - ribosomal_RNA:bowtie2
-> - mouse_C57BL:bowtie2
-> - dog_genome:bowtie2
-> - cat_genome:bowtie2
-> - human_genome:bmtagger
+| Parameter           | Default | Description                                                                                              | Options |
+|---------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
+| `--metaphlan_db`    |    -    | Path to the directory where the MetaPhlAn database is located                                            |    -    |
+| `--metaphlan_nproc` |    4    | Specify the number of threads to use                                                                     |    -    |
+| `--metaphlan_extra` |    -    | User specified extra parameter options                                                                   |    -    |
 
-> [!IMPORTANT]
-> There currently is a bug in the current *kneaddata v0.12.2* release of kneaddata for human_genome:bowtie2.
-> 
-> This will be fixed in _0.12.3_.
-> 
-> You can manually create the *"human_genome_bowtie2"* directory and manually download the correct file here `https://huttenhower.sph.harvard.edu/kneadData_databases/Homo_sapiens_hg39_T2T_Bowtie2_v0.1.tar.gz` and extract it into the *kneaddata_path/human_genome_bowtie2* directory.
-> 
-> Then, within that directory run the following command: `touch .done`
+#### Humann parameters
 
-* `--metaphlan_db_path` : Path to the directory where metaphlan databases are saved or will be downloaded (default: ./metaphlan_db/)
+| Parameter                | Default   | Description                                                                                              | Options                  |
+|--------------------------|-----------|----------------------------------------------------------------------------------------------------------|--------------------------|
+| `--humann_nucleotide_db` | NULL      | Path to the directory where the HUMAnN nucleotide database is located                                    |           -              |
+| `--humann_protein_db`    | NULL      | Path to the directory where the HUMAnN protein database is located                                       |           -              |
+| `--humann_pathway_db`    | `metacyc` | Specify the database to use for pathway computations (default: metacyc)                                  | `metacyc`, `unipathways` |
+| `--humann_threads`       |    4      | Specify the number of threads                                                                            |           -              |
+| `--humann_extra`         |    -      | User specified extra parameter options                                                                   |           -              |
 
-* `--humann_nucleotide_db` : Comma separated list with no spaces of nucleotide databases for humann to use in database:build format (default: chocophlan:full)
-    Possible options:
-        - chocophlan:full
+#### GO-term parameters
 
-* `--humann_nuc_db_path` : Path to the directory where humann nucleotide database is saved or will be downloaded (default: ./humann_nucdb/)
+| Parameter           | Default | Description                                                                                              | Options |
+|---------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
+| `--go_term_db`      | NULL    | Path to the directory where the GO-term database is located                                              |    -    |
 
-* `--humann_protein_db` : Comma separated list with no spaces of protein databases for humann to use in database:build format (default: uniref:uniref50_diamond)
+## Input Files
 
-> [!NOTE]
-> Possible options:
-> - uniref:uniref50_diamond
-> - uniref:uniref90_diamond
-> - uniref:uniref50_ec_filtered_diamond
-> - uniref:uniref90_ec_filtered_diamond
+### Required Files
 
-* `--humann_prot_db_path` : Path to the directory where humann protein database is saved or will be downloaded (default: ./humann_protdb/)
+  1. **Sample Sheet** in `CSV` format. Below are two examples of how the samplesheet should look like:
+  
+  Example 1: For dataset with exp_conditions (factor) information.
 
-* `--humann_pathway_db` : Specify the database to use for pathway {metacyc, unipathways} computations (default: metacyc)
+  ```csv
+  sample,exp_conditions,fastq_1,fastq_2
+  SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+  SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+  SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+  ```
 
-## Reporting
+  Example 2: For dataset without exp_conditions (factor) information.
 
-## Pipeline Output
+  ```csv
+  sample,fastq_1,fastq_2
+  SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+  SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+  SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+  ```
 
-## Credits
+  2. **FASTQ files**: Paired-end FASTQ files. In `.fastq.gz` and `.fastq` formats.
+   
+  3. **KneadData database**: Download the [KneadData database](https://huttenhower.sph.harvard.edu/kneaddata) and provide the path to the database directory.
+   
+  4. **MetaPhlAn database**: Download the MetaPhlAn database
 
-## Contribution and Support
+  5. **HUMAnN nucleotide database**: Download the HUMAnN nucleotide database
+   
+  6. **HUMAnN protein database**: Download the HUMAnN protein database
 
-## Citations
+## Output
+
+
+## Citation
