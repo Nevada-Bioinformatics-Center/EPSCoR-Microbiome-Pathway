@@ -72,3 +72,4 @@ process DESCRIPTIVE_PROFILING {
     desc_prof.R ${joined_pathabundance} top_genus_out.tsv top_species_out.tsv
     """
 }
+
