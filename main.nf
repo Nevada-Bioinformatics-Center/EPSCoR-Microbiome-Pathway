@@ -75,7 +75,7 @@ workflow  {
 
     // Parse the samplesheet and validate paired-end format
         samples_ch = Channel
-            .fromPath("file:${params.samplesheet}", checkIfExists: true)
+            .fromPath("${params.samplesheet}", checkIfExists: true)
             .splitCsv(header: true, sep: ',', skip: 0)
             .map { row -> 
             if (!row.fastq_1 || !row.fastq_2) {
