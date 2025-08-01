@@ -3,7 +3,6 @@
  * Description: This module performs HUMAnN analysis on metagenomic data.
  * Version: v3.9
  * Author: Kanishka Manna
- * Date: 2025-04-09
  */
 
 process FUNCTIONAL_PROFILING {
@@ -11,7 +10,6 @@ process FUNCTIONAL_PROFILING {
 
     label 'humann_conda'
     label 'humann_docker'
-    label 'high'
     
     publishDir "${params.output}/humann_out", mode: 'copy'
 
@@ -29,7 +27,7 @@ process FUNCTIONAL_PROFILING {
     # Run HUMAnN on the input reads
     humann \\
         --input ${reads} \\
-        --input-format fastq \\
+        --input-format fastq.gz \\
         --nucleotide-database ${nucleotide_db} \\
         --protein-database ${protein_db} \\
         --taxonomic-profile ${taxonomic_profile} \\

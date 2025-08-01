@@ -3,7 +3,6 @@
  * Description: This module performs MetaPhlAn analysis on metagenomic data.
  * Version: v4.1.1
  * Author: Kanishka Manna and Hans Vasquez-Gross
- * Date: 2025-04-11
  */
 
 process TAXONOMIC_PROFILING {
@@ -12,9 +11,8 @@ process TAXONOMIC_PROFILING {
 
     label 'metaphlan_conda'
     label 'metaphlan_docker'
-    label 'high'
 
-    publishDir "${params.output}/metaphlan_out", mode: 'copy'
+    publishDir "${params.output}/metaphlan_out", mode: 'symlink'
 
     input:
         tuple val(sample_id), path(merged_fastq), path(metaphlan_db_dir)
@@ -29,12 +27,15 @@ process TAXONOMIC_PROFILING {
     metaphlan \\
         ${merged_fastq} \\
         --input_type fastq \\
-        --db_dir ${metaphlan_db_dir} \\
+        --bowtie2db ${metaphlan_db_dir} \\
         --output_file ${sample_id}_profile.tsv \\
-        --mapout ${sample_id}_bowtie2.bz2 \\
+        --bowtie2out ${sample_id}_bowtie2.bz2 \\
+        --unclassified_estimation \\
+        -t rel_ab_w_read_stats \\
+        --nreads 100 \\
         --nproc ${params.metaphlan_nproc} \\
         --offline \\
-        --index mpa_vJun23_CHOCOPhlAnSGB_202403 \\
+        --index ${params.metaphlan_index} \\
         ${params.metaphlan_extra} \\
         &> ${sample_id}_metaphlan.log
     

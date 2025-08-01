@@ -224,6 +224,113 @@ write.csv(file = file.path(output_dir, "consensus-results.csv"), as.data.frame(c
 #  warning("Meta-analysis requires results from two or more comparisons. Skipping meta-analysis step.")
 #}
 
+
+#############################################
+
+# ---------- Static Plots ---------- #
+
+library(igraph)
+library(ggraph)
+library(RColorBrewer)
+library(ggplot2)
+
+top_terms <- consensusResult %>%
+  arrange(p.fisher) %>%
+  head(25)
+
+
+go_graph <- graph.empty(directed = FALSE)
+go_graph <- add_vertices(go_graph, nrow(top_terms),
+                         name = top_terms$name,
+                         category = if ("category" %in% colnames(top_terms)) top_terms$category,
+                         significance = -log10(top_terms$p.fisher),
+                         comparison = top_terms$comparison)
+
+for(i in 1:(nrow(top_terms)-1)) {
+  for(j in (i+1):nrow(top_terms)) {
+    words_i <- unlist(strsplit(tolower(top_terms$name[i]), " "))
+    words_j <- unlist(strsplit(tolower(top_terms$name[j]), " "))
+    common_words <- intersect(words_i, words_j)
+    common_words <- common_words[!common_words %in% 
+                                   c("of", "the", "a", "in", "to", "by", "and", "or")]
+    if(length(common_words) > 0) {
+      edge_comparison <- top_terms$comparison[i]  # Use comparison from first vertex
+      go_graph <- add_edges(go_graph, c(i, j), weight = length(common_words), comparison = edge_comparison)
+    }
+  }
+}
+
+if (ecount(go_graph) > 0 && vcount(go_graph) > 0) {
+  comm <- cluster_louvain(go_graph)
+  membership <- membership(comm)
+
+  V(go_graph)$size <- V(go_graph)$significance * 3
+  V(go_graph)$community <- membership
+  E(go_graph)$width <- E(go_graph)$weight
+
+  set.seed(42)
+
+
+# Need a color palette with more colors or use default
+  
+network_plot <- ggraph(go_graph, layout = "fr") + 
+      geom_edge_link(alpha = 0.3) +
+      geom_node_point(aes(size = significance, color = as.factor(community)), alpha = 0.8) +
+      geom_node_text(aes(label = name), repel = TRUE, size = 3.5) +
+      #scale_color_brewer(palette = "Set1") +
+      scale_size_continuous(range = c(3, 10)) +
+      facet_wrap(~ comparison) +
+      labs(title = "Network of Top 25 GO Terms",
+           #subtitle = "Grouped by Comparison",
+           size = "-log10(p-value)",
+           color = "Category") +
+      theme_void() +
+      theme(
+        text = element_text(size = 18),
+        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 16.5, hjust = 0.5),
+        legend.position = "right",
+        panel.background = element_rect(fill = "white", color = NA),
+        plot.background = element_rect(fill = "white", color = NA)
+      )
+
+
+ggsave(network_plot, file = file.path(output_dir,"Pathway_Networks_Plot.png"), width = 10.5, height = 7, dpi = 600)
+
+}
+
+
+bubble_plot <- ggplot(top_terms, aes(x = comparison, y = reorder(name, -log10(p.fisher)))) +
+  # geom_segment(aes(x = 0, xend = -log10(p.fisher), 
+  #                  y = reorder(name, -log10(p.fisher)), 
+  #                  yend = reorder(name, -log10(p.fisher))), color = "grey50") +
+  geom_point(aes(size = -log10(p.fisher), color = comparison), alpha = 0.8) +
+  #scale_color_viridis_c() +
+  scale_color_brewer(palette = "Set1") +
+  scale_size_continuous(range = c(3, 8)) +
+  theme_minimal() +
+  labs(title = "Top 25 Significant GO Terms",
+       x = "Comparison", y = NULL,
+       size = "-log10(p-value)", 
+       color = "Comparison"
+  ) +
+  theme(
+    axis.text.y = element_text(size = 14),
+    axis.text.x = element_text(size = 14, angle = 45, hjust = 0.8),
+    axis.title = element_text(size = 14),
+    plot.title = element_text(size = 14 * 1.2),
+    panel.background = element_rect(fill = "white", color = NA),
+    plot.background = element_rect(fill = "white", color = NA)
+  )
+
+bubble_plot
+
+ggsave(bubble_plot, file = file.path(output_dir,"Pathway_Bubble_Plot.png"), width = 11, height = 10, dpi = 600)
+
+
+
+###################################################
+
 message("Consensus Pathway Analysis complete. Results saved to: ", output_dir)
 
 ############

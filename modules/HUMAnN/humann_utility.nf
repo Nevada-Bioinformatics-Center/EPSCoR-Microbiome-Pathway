@@ -3,7 +3,6 @@
  * Description: This module performs HUMAnN analysis on metagenomic data.
  * Version: v3.9
  * Author: Kanishka Manna
- * Date: 2025-04-28
  */
 
 
@@ -13,7 +12,7 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
 
     label 'humann_conda'
 
-    publishDir "${params.output}/humann_out/pathabundance", mode: 'copy'
+    publishDir "${params.output}/humann_out/pathabundance", mode: 'symlink'
 
     input:
         tuple val (sample_id), path(pathabundance)
@@ -24,7 +23,7 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
     """
     humann_renorm_table --input ${pathabundance} \
     --output "${sample_id}_renorm_pathabundance.tsv" \
-    --units relab
+    --units ${params.humann_renorm_units}
     """
 }
 
@@ -64,12 +63,11 @@ process DESCRIPTIVE_PROFILING {
         path(joined_pathabundance)
     
     output:
-        path("top_genus_out.tsv"), emit: top_genus
-        path("top_species_out.tsv"), emit: top_species
+        path("top_path_taxa_results.tsv"), emit: top_taxa
     
     script:
     """
-    desc_prof.R ${joined_pathabundance} top_genus_out.tsv top_species_out.tsv
+    desc_prof.R ${joined_pathabundance} top_path_taxa_results.tsv
     """
 }
 

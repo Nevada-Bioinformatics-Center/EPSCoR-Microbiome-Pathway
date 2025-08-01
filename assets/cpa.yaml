@@ -30,3 +30,7 @@ dependencies:
   - gdal
   - geos
   - proj
+  - r-igraph
+  - r-ggraph
+  - r-rcolorbrewer
+  - r-ggplot2

@@ -1,3 +1,9 @@
+/*
+ * Module: KneadData
+ * Description: This module performs kneading of metagenomic data.
+ * Version: v1.29
+ * Author: Kanishka Manna
+ */
 
 process RUN_MULTIQC {
 
@@ -5,7 +11,6 @@ process RUN_MULTIQC {
 
     label 'multiqc_conda'
     label 'multiqc_docker'
-    label 'medium'
 
     publishDir "${params.output}/multiqc_out", mode: 'copy'
 

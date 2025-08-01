@@ -10,34 +10,38 @@ process KNEADING_DATA {
 
     label 'kneaddata_conda'
     label 'kneaddata_docker'
-    label 'high'
 
-    publishDir "${params.output}/kneaddata_out", mode: 'copy'
+    publishDir "${params.output}/kneaddata_out", mode: 'symlink'
 
     input:
         tuple val(sample_id), path(read), path(kneaddata_db_paths) 
 
     output:
-        path( "*.fastq" ),  emit: kneaddata_fastq
-        path( "*.log" ),    emit: kneaddata_log
-        path( "fastqc/${sample_id}*.html" ),    emit: kneaddata_fastqc_html
+        path( "${sample_id}.fastq.gz" ), emit: kneaddata_fastq
+        path( "*.log" ), emit: kneaddata_log
+        path( "fastqc/${sample_id}*.html" ), emit: kneaddata_fastqc_html
         path( "fastqc/${sample_id}*.zip" ), emit: kneaddata_fastqc_zip
 
     script:
         """
-        kneaddata \
-        --input1 ${read[0]} \
-        --input2 ${read[1]} \
-        --threads ${params.kneaddata_threads} \
-        --processes ${params.kneaddata_processes} \
-        --reference-db ${kneaddata_db_paths} \
-        --output  "./" \
-        --output-prefix ${sample_id} \
-        --run-fastqc-start \
-        --run-fastqc-end \
-        --remove-intermediate-output \
-        --cat-final-output \
-        ${params.kneaddata_extra} \
-        --log ${sample_id}_kneaddata.log
+        kneaddata \\
+            --input1 ${read[0]} \\
+            --input2 ${read[1]} \\
+            --threads ${params.kneaddata_threads} \\
+            --processes ${params.kneaddata_processes} \\
+            --reference-db ${kneaddata_db_paths} \\
+            --output  "./" \\
+            --output-prefix ${sample_id} \\
+            --run-fastqc-start \\
+            --run-fastqc-end \\
+            --remove-intermediate-output \\
+            --cat-final-output \\
+            --run-trim-repetitive \\
+            --sequencer-source ${params.kneaddata_sequencer_source} \\
+            ${params.kneaddata_extra} \\
+            --log ${sample_id}_kneaddata.log
+
+        # gzip all FASTQ files
+        gzip -f *.fastq
         """
 }

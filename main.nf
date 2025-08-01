@@ -138,7 +138,7 @@ workflow  {
     KNEADING_DATA.out.kneaddata_fastq
         .collectFile()
         .map { fastq_file -> 
-            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+            def sample_id = fastq_file.getBaseName().replace('.fastq.gz', '').replace('.fastq', '')
             tuple(sample_id, fastq_file)
         }
         .combine(metaphlan_db_dir_ch)
@@ -146,6 +146,8 @@ workflow  {
             tuple(sample_id, reads, db_dir) 
         }
        .set { metaphlan_inputs }
+
+    metaphlan_inputs.view { "MetaPhlAn inputs: $it" }
 
     // Run MetaPhlAn for taxonomic profiling
     TAXONOMIC_PROFILING(metaphlan_inputs)
@@ -189,7 +191,7 @@ workflow  {
     KNEADING_DATA.out.kneaddata_fastq
         .collectFile()
         .map { fastq_file -> 
-            def sample_id = fastq_file.getBaseName().replace('.fastq', '')
+            def sample_id = fastq_file.getBaseName().replace('.fastq.gz', '').replace('.fastq', '')
             tuple(sample_id, fastq_file)
         }
         .set { sample_fastq_ch }
@@ -205,6 +207,8 @@ workflow  {
             tuple(sample_id, reads, nuc_db, prot_db, taxa)
         }
         .set { humann_inputs }
+
+    humann_inputs.view { "HUMAnN inputs: $it" }
 
     // Run HUMAnN functional profiling
     FUNCTIONAL_PROFILING(humann_inputs)
@@ -243,15 +247,17 @@ workflow  {
         return outdir
     }
     .set { humann_genefam_ch }
-    humann_genefam_ch.view { "🧾 Directory prepared for CPA: $it" }
+    
+    humann_genefam_ch.view { "Directory prepared for CPA: $it" }
 
     // Extract sample metadata information from the samplesheet
     Channel.fromPath(params.samplesheet, checkIfExists: true)
             .set { samplesheet_file_ch }
+
     EXTRACT_METAINFO(samplesheet_file_ch)
 
     // Run CPA analysis
-    CONSENSUS_PATHWAY_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, goterms_ch)
+   CONSENSUS_PATHWAY_ANALYSIS(EXTRACT_METAINFO.out.metainfo, humann_genefam_ch, goterms_ch)
    }
    
 
@@ -304,16 +310,9 @@ workflow  {
 
     // Run multiqc
     RUN_MULTIQC(
-        KNEADING_DATA.out.kneaddata_fastqc_zip.mix(
-            KNEADING_DATA.out.kneaddata_fastq,
-            KNEADING_DATA.out.kneaddata_log,
-            KNEADING_DATA.out.kneaddata_fastqc_html,
-            TAXONOMIC_PROFILING.out.profiled_taxa_txt,
-            TAXONOMIC_PROFILING.out.metaphlan_log,
-            FUNCTIONAL_PROFILING.out.gene_fam,
-            FUNCTIONAL_PROFILING.out.path_abundance,
-            FUNCTIONAL_PROFILING.out.path_coverage,
-            FUNCTIONAL_PROFILING.out.humann_log
+        KNEADING_DATA.out.kneaddata_fastqc_html.mix(
+            KNEADING_DATA.out.kneaddata_fastqc_zip,
+            TAXONOMIC_PROFILING.out.profiled_taxa_txt
         ).collect()
     )
 }
