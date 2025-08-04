@@ -20,7 +20,9 @@ dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 # ---------- Load libraries ---------- #
 options(repos = c(CRAN = "https://cloud.r-project.org"))
 pacman::p_load(tidyverse, RCurl, R.utils, fgsea, pbmcapply, stringr, devtools, BiocManager, 
-               UniProt.ws, stringdist, SummarizedExperiment, gridpattern, ggpattern, units, sf)
+               UniProt.ws, stringdist, SummarizedExperiment, gridpattern, ggpattern, units, sf, igraph, 
+               ggraph, RColorBrewer, ggplot2)
+               
 devtools::install_github("tinnlab/RCPA")
 library(RCPA)
 
@@ -229,11 +231,6 @@ write.csv(file = file.path(output_dir, "consensus-results.csv"), as.data.frame(c
 
 # ---------- Static Plots ---------- #
 
-library(igraph)
-library(ggraph)
-library(RColorBrewer)
-library(ggplot2)
-
 top_terms <- consensusResult %>%
   arrange(p.fisher) %>%
   head(25)
@@ -279,7 +276,7 @@ network_plot <- ggraph(go_graph, layout = "fr") +
       geom_node_text(aes(label = name), repel = TRUE, size = 3.5) +
       #scale_color_brewer(palette = "Set1") +
       scale_size_continuous(range = c(3, 10)) +
-      facet_wrap(~ comparison) +
+      facet_wrap(~exp_conditions) +
       labs(title = "Network of Top 25 GO Terms",
            #subtitle = "Grouped by Comparison",
            size = "-log10(p-value)",

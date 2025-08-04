@@ -30,6 +30,8 @@ nextflow.enable.dsl = 2
 
 include { KNEADING_DATA } from './modules/KneadData/kneaddata.nf'
 include { TAXONOMIC_PROFILING  } from './modules/MetaPhlAn/metaphlan.nf'
+include { MERGE_TAXONOMIC_TABLES } from './modules/MetaPhlAn/metaphlan_utility.nf'
+include { TAXONOMIC_VISUALIZATION } from './modules/MetaPhlAn/metaphlan_utility.nf'
 include { FUNCTIONAL_PROFILING } from './modules/HUMAnN/humann.nf'
 include { NORMALIZE_PATHWAY_ABUNDANCE } from './modules/HUMAnN/humann_utility.nf'
 include { JOIN_PATHWAY_ABUNDANCE } from './modules/HUMAnN/humann_utility.nf'
@@ -151,6 +153,29 @@ workflow  {
 
     // Run MetaPhlAn for taxonomic profiling
     TAXONOMIC_PROFILING(metaphlan_inputs)
+
+
+    // Collect all MetaPhlAn profile.tsv files
+    TAXONOMIC_PROFILING.out.profiled_taxa
+        .collect()
+        .set { metaphlan_tables_ch }
+
+    Channel.fromPath(params.samplesheet, checkIfExists: true)
+        .set { samplesheet_file_ch }
+    
+
+    if (params.metaphlan_extra_analysis) {
+        // Run MetaPhlAn utility to merge tables
+        MERGE_TAXONOMIC_TABLES(metaphlan_tables_ch)
+
+        MERGE_TAXONOMIC_TABLES.out.merged_taxa_profile.set { merged_taxa_profile_ch }
+
+        // Run MetaPhlAn visualization
+        TAXONOMIC_VISUALIZATION(
+            merged_taxa_profile_ch,
+            samplesheet_file_ch
+        )
+    }
 
 
 
