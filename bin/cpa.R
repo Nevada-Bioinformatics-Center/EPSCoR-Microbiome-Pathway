@@ -210,6 +210,8 @@ consensusResult <- allGSResults %>% group_by(ID) %>% summarize(
 ) %>% left_join(allGSResults, by = "ID") %>% dplyr::select(ID, name, p.fisher) %>% as.data.frame() %>% unique()
 write.csv(file = file.path(output_dir, "consensus-results.csv"), as.data.frame(consensusResult), row.names = TRUE)
 
+
+###############################################
 # ---------- Pathway Meta-Analysis ---------- #
 #n_comparisons <- length(unique(allGSResults$comparison))
 #if (n_comparisons >= 2) {
@@ -225,24 +227,35 @@ write.csv(file = file.path(output_dir, "consensus-results.csv"), as.data.frame(c
 #} else {
 #  warning("Meta-analysis requires results from two or more comparisons. Skipping meta-analysis step.")
 #}
-
-
 #############################################
+
 
 # ---------- Static Plots ---------- #
 
+# Add comparison column. Take the comparison with the lowest p.value for each ID
+consensusResult <- consensusResult %>%
+  left_join(
+    allGSResults %>%
+      group_by(ID) %>%
+      slice_min(order_by = p.value, n = 1) %>%
+      dplyr::select(ID, comparison),
+    by = "ID"
+  )
+
+# Select top 25 GO terms by lowest p.fisher value
 top_terms <- consensusResult %>%
   arrange(p.fisher) %>%
   head(25)
 
-
+# Build the GO term network graph
 go_graph <- graph.empty(directed = FALSE)
 go_graph <- add_vertices(go_graph, nrow(top_terms),
                          name = top_terms$name,
-                         category = if ("category" %in% colnames(top_terms)) top_terms$category,
+                         category = top_terms$category,
                          significance = -log10(top_terms$p.fisher),
                          comparison = top_terms$comparison)
 
+# Add edges between nodes sharing common words (excluding stop words)
 for(i in 1:(nrow(top_terms)-1)) {
   for(j in (i+1):nrow(top_terms)) {
     words_i <- unlist(strsplit(tolower(top_terms$name[i]), " "))
@@ -257,46 +270,43 @@ for(i in 1:(nrow(top_terms)-1)) {
   }
 }
 
-if (ecount(go_graph) > 0 && vcount(go_graph) > 0) {
-  comm <- cluster_louvain(go_graph)
-  membership <- membership(comm)
-
-  V(go_graph)$size <- V(go_graph)$significance * 3
-  V(go_graph)$community <- membership
-  E(go_graph)$width <- E(go_graph)$weight
-
-  set.seed(42)
-
-
-# Need a color palette with more colors or use default
+# Cluster nodes using Louvain method for community detection
+comm <- cluster_louvain(go_graph)
+membership <- membership(comm)
+# Set node and edge attributes for plotting
+V(go_graph)$size <- V(go_graph)$significance * 3
+V(go_graph)$community <- membership
+E(go_graph)$width <- E(go_graph)$weight
+# For reproducible layout
+set.seed(42)
   
+# Create and save the network plot
+# Need a color palette with more colors or use default
 network_plot <- ggraph(go_graph, layout = "fr") + 
-      geom_edge_link(alpha = 0.3) +
-      geom_node_point(aes(size = significance, color = as.factor(community)), alpha = 0.8) +
-      geom_node_text(aes(label = name), repel = TRUE, size = 3.5) +
-      #scale_color_brewer(palette = "Set1") +
-      scale_size_continuous(range = c(3, 10)) +
-      facet_wrap(~exp_conditions) +
-      labs(title = "Network of Top 25 GO Terms",
-           #subtitle = "Grouped by Comparison",
-           size = "-log10(p-value)",
-           color = "Category") +
-      theme_void() +
-      theme(
-        text = element_text(size = 18),
-        plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
-        plot.subtitle = element_text(size = 16.5, hjust = 0.5),
-        legend.position = "right",
-        panel.background = element_rect(fill = "white", color = NA),
-        plot.background = element_rect(fill = "white", color = NA)
-      )
-
+    geom_edge_link(alpha = 0.3) +
+    geom_node_point(aes(size = significance, color = as.factor(community)), alpha = 0.8) +
+    geom_node_text(aes(label = name), repel = TRUE, size = 3.5) +
+    #scale_color_brewer(palette = "Set1") +
+    scale_size_continuous(range = c(3, 10)) +
+    facet_wrap(~ comparison) +
+    labs(title = "Network of Top 25 GO Terms",
+         #subtitle = "Grouped by Comparison",
+         size = "-log10(p-value)",
+         color = "Category") +
+    theme_void() +
+    theme(
+      text = element_text(size = 18),
+      plot.title = element_text(size = 20, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 16.5, hjust = 0.5),
+      legend.position = "right",
+      panel.background = element_rect(fill = "white", color = NA),
+      plot.background = element_rect(fill = "white", color = NA)
+    )
 
 ggsave(network_plot, file = file.path(output_dir,"Pathway_Networks_Plot.png"), width = 10.5, height = 7, dpi = 600)
 
-}
 
-
+# Create and save the bubble plot for the top GO terms
 bubble_plot <- ggplot(top_terms, aes(x = comparison, y = reorder(name, -log10(p.fisher)))) +
   # geom_segment(aes(x = 0, xend = -log10(p.fisher), 
   #                  y = reorder(name, -log10(p.fisher)), 
@@ -319,8 +329,6 @@ bubble_plot <- ggplot(top_terms, aes(x = comparison, y = reorder(name, -log10(p.
     panel.background = element_rect(fill = "white", color = NA),
     plot.background = element_rect(fill = "white", color = NA)
   )
-
-bubble_plot
 
 ggsave(bubble_plot, file = file.path(output_dir,"Pathway_Bubble_Plot.png"), width = 11, height = 10, dpi = 600)
 
