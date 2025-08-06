@@ -48,36 +48,43 @@ df$Pathway <- as.character(df$Pathway)
 df$genus <- as.character(df$genus)
 df$species <- as.character(df$species)
 
+# Remove rows with missing or malformed taxonomy
+df_clean <- df %>%
+  filter(!is.na(Pathway)) %>%
+  filter(!Pathway %in% c("UNMAPPED", "UNINTEGRATED")) %>%
+  filter(!grepl("^\\d+(\\.\\d+)?$", Pathway)) # Remove rows where Pathway is just a number
+
 
 # Top genus per pathway
-top_genus <- df %>%
+top_genus <- df_clean %>%
   filter(!is.na(genus)) %>%
   group_by(Pathway, genus) %>%
-  summarise(GenusAbundance = sum(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
-  arrange(Pathway, desc(GenusAbundance)) %>%
+  filter(rowSums(across(where(is.numeric)), na.rm = TRUE) > 0) %>%
+  summarise(GenusCPM = sum(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
+  arrange(Pathway, desc(GenusCPM)) %>%
   group_by(Pathway) %>%
   slice_head(n = 1) %>%
   ungroup()
 
 # Top species per pathway
-top_species <- df %>%
-  filter(!is.na(species)) %>%
-  group_by(Pathway, species) %>%
-  summarise(SpeciesAbundance = sum(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
-  arrange(Pathway, desc(SpeciesAbundance)) %>%
-  group_by(Pathway) %>%
-  slice_head(n = 1) %>%
-  ungroup()
+#top_species <- df %>%
+#  filter(!is.na(species)) %>%
+#  group_by(Pathway, species) %>%
+#  summarise(SpeciesCPM = sum(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
+#  arrange(Pathway, desc(SpeciesCPM)) %>%
+#  group_by(Pathway) %>%
+#  slice_head(n = 1) %>%
+#  ungroup()
 
 # Merge top genus and species for each pathway
-final <- full_join(top_genus, top_species, by = "Pathway") %>%
-  mutate(
-    RelativeAbundance = coalesce(SpeciesAbundance, GenusAbundance)
-  ) %>%
-  select(Pathway, genus, species, RelativeAbundance)
+#final <- full_join(top_genus, top_species, by = "Pathway") %>%
+#  mutate(
+#    CountsPerMillion = coalesce(SpeciesCPM, GenusCPM)
+#  ) %>%
+#  select(Pathway, genus, species, CountsPerMillion)
 
-colnames(final) <- c("Pathway", "Genus", "Species", "RelativeAbundance")
-write.table(final, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
+colnames(top_genus) <- c("Pathway", "Genus", "CountsPerMillion")
+write.table(top_genus, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
 
 # THE END!
 ##########
