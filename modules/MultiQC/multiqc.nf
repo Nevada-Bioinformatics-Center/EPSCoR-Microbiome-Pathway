@@ -1,6 +1,6 @@
 /*
- * Module: KneadData
- * Description: This module performs kneading of metagenomic data.
+ * Module: MultiQC
+ * Description: This module aggregates all QC and other info from Read Processing/Kneading Data into a report.
  * Version: v1.29
  * Author: Kanishka Manna
  */

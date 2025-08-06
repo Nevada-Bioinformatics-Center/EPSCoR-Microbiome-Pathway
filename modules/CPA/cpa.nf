@@ -76,7 +76,7 @@ process CONSENSUS_PATHWAY_ANALYSIS {
     label 'cpa_conda'
     label 'high'
     
-    publishDir "${params.output}/cpa_out", mode: 'copy'
+    publishDir "${params.output}/cpa_out", mode: 'move'
 
     input:
         path (samplesheet)

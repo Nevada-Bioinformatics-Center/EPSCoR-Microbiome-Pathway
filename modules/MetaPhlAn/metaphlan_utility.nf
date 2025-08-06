@@ -1,8 +1,8 @@
 /*
- * Module: MetaPhlAn
- * Description: This module performs MetaPhlAn analysis on metagenomic data.
+ * Module: MetaPhlAn Utility tool and Visualization
+ * Description: This module performs downstream analysis on merged taxonomic file from MetaPhlAn.
  * Version: v4.1.1
- * Author: Kanishka Manna and Hans Vasquez-Gross
+ * Author: Kanishka Manna
  */
 
 // Process to run MetaPhlAn merging of taxonomic profiling tables
@@ -11,7 +11,7 @@ process MERGE_TAXONOMIC_TABLES {
     
     label 'metaphlan_conda'
 
-    publishDir "${params.output}/metaphlan_out/merge", mode: 'symlink'
+    publishDir "${params.output}/metaphlan_out/merge", mode: 'copy'
 
     input:
         path(metaphlan_tables)
@@ -32,17 +32,17 @@ process TAXONOMIC_VISUALIZATION {
 
     label 'taxviz_conda'
 
-    publishDir "${params.output}/metaphlan_out/plots", mode: 'move'
+    publishDir "${params.output}/metaphlan_out", mode: 'move'
 
     input:
         path(merged_taxa_profile) 
         path(samplesheet_file)
 
     output:
-        path("*.png"), emit: taxa_viz
+        path("*"), emit: taxa_viz
 
     script:
     """
-    taxa_viz.r ${merged_taxa_profile} ${samplesheet_file} ${params.output}/metaphlan_out/plots
+    taxa_viz.r ${merged_taxa_profile} ${samplesheet_file}
     """
 }

@@ -1,6 +1,6 @@
 /*
- * Module: HUMAnN Utility tools
- * Description: This module performs HUMAnN analysis on metagenomic data.
+ * Module: HUMAnN Utility tools and Descriptive Profiling
+ * Description: This module performs downstream analysis on Pathway Abundance files from HUMAnN.
  * Version: v3.9
  * Author: Kanishka Manna
  */
@@ -57,7 +57,7 @@ process DESCRIPTIVE_PROFILING {
 
     label 'desc_conda'
 
-    publishDir "${params.output}/desc_out", mode: 'copy'
+    publishDir "${params.output}/desc_out", mode: 'move'
 
     input:
         path(joined_pathabundance)

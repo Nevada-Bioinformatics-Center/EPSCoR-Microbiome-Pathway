@@ -6,11 +6,10 @@ channels:
 
 dependencies:
   - r-base
-  - gsl=2.6.*
   - r-pacman
   - r-dplyr
   - r-ggplot2
   - r-vegan
-  - bioconductor-mia=1.0.2
-  - bioconductor-phyloseq=1.36.0
-  - bioconductor-dirichletmultinomial=1.34.0
+  - bioconductor-mia
+  - bioconductor-phyloseq
+  - bioconductor-dirichletmultinomial

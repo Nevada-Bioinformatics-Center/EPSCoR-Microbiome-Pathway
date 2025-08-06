@@ -12,7 +12,7 @@ process TAXONOMIC_PROFILING {
     label 'metaphlan_conda'
     label 'metaphlan_docker'
 
-    publishDir "${params.output}/metaphlan_out", mode: 'symlink'
+    publishDir "${params.output}/metaphlan_out", mode: 'copy'
 
     input:
         tuple val(sample_id), path(merged_fastq), path(metaphlan_db_dir)
