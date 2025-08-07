@@ -52,10 +52,11 @@ sample_data(phylo) <- metaData
 # Estimate richness (Shannon and Inverse Simpson indices)
 alpha_df <- estimate_richness(phylo, measures=c("Shannon", "InvSimpson"))
 alpha_df$sample <- rownames(alpha_df)
+alpha_df$exp_conditions <- as.factor(metaData$exp_conditions[match(alpha_df$sample, metaData$sample)])
 
 # Shannon diversity plot
 alpha_plot <- ggplot(alpha_df) +
-  geom_point(aes(x = sample, y = Shannon, fill = factor), pch = 21, color = "black", size = 4, alpha = 0.8) +
+  geom_point(aes(x = sample, y = Shannon, fill = .data[[factor]]), pch = 21, color = "black", size = 4, alpha = 0.8) +
   scale_fill_viridis_d(option="turbo") +
   theme_bw(base_size = 14) +
   labs(x = "Samples",
@@ -78,7 +79,7 @@ ggsave(alpha_plot, file = file.path(exportDir, "alpha_diversity_shannon.png"), h
 
 # Inverse Simpson diversity plot
 alpha_plotIS <- ggplot(alpha_df) +
-  geom_point(aes(x = sample, y = InvSimpson, fill = factor), pch = 21, color = "black", size = 4, alpha = 0.8) +
+  geom_point(aes(x = sample, y = InvSimpson, fill = .data[[factor]]), pch = 21, color = "black", size = 4, alpha = 0.8) +
   scale_fill_viridis_d(option="turbo") +
   theme_bw(base_size = 14) +
   labs(x = "Samples",
@@ -127,16 +128,21 @@ ggsave(top10plot, file = file.path(exportDir, "scaled_abundances_top10.png"), he
 
 # ---------- NMDS Ordination Plot ---------- #
 ord.nmds.bray <- ordinate(phylo, method="NMDS", distance="bray")
-plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS") 
-nmds_df <- plot_ordination(phylo, ord.nmds.bray, justDF = TRUE) 
+ordination_plot <- plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS")
+ggsave(ordination_plot, file = file.path(exportDir, "Bray_NMDS_sample.png"), height = 6, width = 8, units = "in")
 
+nmds_df <- plot_ordination(phylo, ord.nmds.bray, justDF = TRUE)
+
+if ("exp_conditions" %in% colnames(nmds_df)) {
+  nmds_df$exp_conditions <- as.factor(nmds_df$exp_conditions)
+}
 
 nmds_plot <- ggplot(nmds_df) +
   # Dashed lines for improved readability
   geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.8, color = "gray50") +
   geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.8, color = "gray50") +
   
-  geom_point(aes(x = NMDS1, y = NMDS2, fill = factor), pch = 21, color = "black", size = 4, alpha = 0.8) +
+  geom_point(aes(x = NMDS1, y = NMDS2, fill = .data[[factor]]), pch = 21, color = "black", size = 4, alpha = 0.8) +
   #theme_pubr(legend = "right") +
   
   # # Add ellipses with soft transparency

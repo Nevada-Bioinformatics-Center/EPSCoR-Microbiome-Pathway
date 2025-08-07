@@ -52,7 +52,8 @@ df$species <- as.character(df$species)
 df_clean <- df %>%
   filter(!is.na(Pathway)) %>%
   filter(!Pathway %in% c("UNMAPPED", "UNINTEGRATED")) %>%
-  filter(!grepl("^\\d+(\\.\\d+)?$", Pathway)) # Remove rows where Pathway is just a number
+  filter(!grepl("^\\d+(\\.\\d+)?$", Pathway)) %>%
+  filter(!is.na(genus))
 
 
 # Top genus per pathway
@@ -60,7 +61,7 @@ top_genus <- df_clean %>%
   filter(!is.na(genus)) %>%
   group_by(Pathway, genus) %>%
   filter(rowSums(across(where(is.numeric)), na.rm = TRUE) > 0) %>%
-  summarise(GenusCPM = sum(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
+  summarise(GenusCPM = max(across(where(is.numeric)), na.rm = TRUE), .groups = "drop") %>%
   arrange(Pathway, desc(GenusCPM)) %>%
   group_by(Pathway) %>%
   slice_head(n = 1) %>%

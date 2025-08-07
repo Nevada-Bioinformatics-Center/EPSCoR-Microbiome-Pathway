@@ -90,8 +90,31 @@ workflow  {
     samples_ch.view { it -> "Parsed sample: $it" }
         
     // Check if the samplesheet has 'exp_conditions'
-        def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')
-        def has_exp_conditions = samplesheet_header*.trim().contains('exp_conditions')
+    def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')*.trim()
+    def exp_conditions_idx = samplesheet_header.indexOf('exp_conditions')
+    def has_exp_conditions = exp_conditions_idx != -1
+//        def samplesheet_header = file(params.samplesheet).text.readLines().first().split(',')
+//        def has_exp_conditions = samplesheet_header*.trim().contains('exp_conditions')
+
+        // Get all experiment conditions from the samplesheet
+//        def exp_conditions_values = file(params.samplesheet)
+//            .text
+//            .readLines()
+//            .drop(1) // skip header
+//            .collect { it.split(',')[samplesheet_header.indexOf('exp_conditions')].trim() }
+//            .unique()
+
+        def exp_conditions_values = has_exp_conditions
+            ? file(params.samplesheet)
+                .text
+                .readLines()
+                .drop(1) // skip header
+                .collect { it.split(',')[exp_conditions_idx].trim() }
+                .unique()
+            : []
+        
+        // Check if exp_conditions has at least two unique values
+        def exp_conditions_ok = has_exp_conditions && exp_conditions_values.size() > 1
 
 
     /*
@@ -240,7 +263,7 @@ workflow  {
 
 
 
-   if (has_exp_conditions) {
+   if (exp_conditions_ok) {
 
     /*
         ----------------------------
