@@ -8,7 +8,7 @@
 
 ## Pipeline Summary
 
-![](images/pipeline.svg)
+![](images/pipeline.png)
 
 ## Dataset
 
@@ -63,46 +63,71 @@ nextflow main.nf \\
 
 ### Parameters
 
-#### Required parameters
+#### Global Options
 
-| Parameter      | Default              | Description                                                                                              | Options             |
-|----------------|----------------------|----------------------------------------------------------------------------------------------------------|---------------------|
-| `-profile`     | `local`              | Specify the profile to use for running the pipeline                                                      | `local` , `cluster` |
-| `--samplesheet`| NULL                 | Path to a CSV file listing sample names and paired-end FASTQ file paths (R1 and R2), separated by commas |         -           |
-| `--output`     | `${baseDir}/results` | Path to the output directory where results will be saved                                                 |         -           |
+| Parameter         | Default                | Description                                                                                  | Options                |
+|-------------------|------------------------|----------------------------------------------------------------------------------------------|------------------------|
+| `-profile`        | `local`                | Execution profile                                                                            | `local`, `cluster`     |
+| `--samplesheet`   | NULL                   | CSV file with sample names and paired-end FASTQ file paths (R1, R2)                          | -                      |
+| `--output`        | `${baseDir}/results`   | Output directory for results                                                                 | -                      |
 
-#### KneadData parameters
+#### KneadData Parameters
 
-| Parameter              | Default | Description                                                                                              | Options |
-|------------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
-| `--kneaddata_db`       | NULL    | Path to the directory where the KneadData database is located                                            |    -    |
-| `--kneaddata_threads`  |    4    | Specify the number of threads                                                                            |    -    |
-| `--kneaddata_processes`|    2    | Specify the number of processes                                                                          |    -    |
-| `--kneaddata_extra`    |    -    | User specified extra parameter options                                                                   |    -    |
+| Parameter                   | Default      | Description                                                      | Options                        |
+|-----------------------------|--------------|------------------------------------------------------------------|--------------------------------|
+| `--kneaddata_db`            | NULL         | Path to KneadData database                                       | -                              |
+| `--kneaddata_sequencer_source` | NexteraPE | Sequencer type                                                   | `NexteraPE`, `TruSeq2`, `TruSeq3` |
+| `--kneaddata_threads`       | 4            | Threads for KneadData                                            | -                              |
+| `--kneaddata_processes`     | 1            | Processes for KneadData                                          | -                              |
+| `--kneaddata_time`          | -            | Process time (cluster only)                                      | -                              |
+| `--kneaddata_mem`           | 8 GB         | Memory for KneadData                                             | -                              |
+| `--kneaddata_extra`         | -            | Additional KneadData options                                     | -                              |
 
-#### Metaphlan parameters
+#### Taxonomic Profiling (MetaPhlAn) Parameters
 
-| Parameter           | Default | Description                                                                                              | Options |
-|---------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
-| `--metaphlan_db`    |    -    | Path to the directory where the MetaPhlAn database is located                                            |    -    |
-| `--metaphlan_nproc` |    4    | Specify the number of threads to use                                                                     |    -    |
-| `--metaphlan_extra` |    -    | User specified extra parameter options                                                                   |    -    |
+| Parameter                   | Default                              | Description                                                      | Options                        |
+|-----------------------------|--------------------------------------|------------------------------------------------------------------|--------------------------------|
+| `--metaphlan_db`            | -                                    | Directory for MetaPhlAn database                                 | -                              |
+| `--metaphlan_index`         | mpa_vJun23_CHOCOPhlAnSGB_202403      | MetaPhlAn index                                                  | -                              |
+| `--metaphlan_nproc`         | 4                                    | Processes for MetaPhlAn                                          | -                              |
+| `--metaphlan_time`          | -                                    | Process time (cluster only)                                      | -                              |
+| `--metaphlan_mem`           | 16 GB                                | Memory for MetaPhlAn                                             | -                              |
+| `--metaphlan_extra`         | -                                    | Additional MetaPhlAn options                                     | -                              |
+| `--metaphlan_extra_analysis`| -                                    | Estimate Shannon, Inverse Simpson, and Alpha diversity           | -                              |
 
-#### Humann parameters
+#### Functional Profiling (HUMAnN) Parameters
 
-| Parameter                | Default   | Description                                                                                              | Options                  |
-|--------------------------|-----------|----------------------------------------------------------------------------------------------------------|--------------------------|
-| `--humann_nucleotide_db` | NULL      | Path to the directory where the HUMAnN nucleotide database is located                                    |           -              |
-| `--humann_protein_db`    | NULL      | Path to the directory where the HUMAnN protein database is located                                       |           -              |
-| `--humann_pathway_db`    | `metacyc` | Specify the database to use for pathway computations (default: metacyc)                                  | `metacyc`, `unipathways` |
-| `--humann_threads`       |    4      | Specify the number of threads                                                                            |           -              |
-| `--humann_extra`         |    -      | User specified extra parameter options                                                                   |           -              |
+| Parameter                   | Default      | Description                                                      | Options                        |
+|-----------------------------|--------------|------------------------------------------------------------------|--------------------------------|
+| `--humann_nucleotide_db`    | NULL         | HUMAnN nucleotide database directory                             | -                              |
+| `--humann_protein_db`       | NULL         | HUMAnN protein database directory                                | -                              |
+| `--humann_pathway_db`       | metacyc      | Pathway DB for HUMAnN                                            | `metacyc`, `unipathways`       |
+| `--humann_threads`          | 4            | Threads for HUMAnN                                               | -                              |
+| `--humann_time`             | -            | Process time (cluster only)                                      | -                              |
+| `--humann_mem`              | 16 GB        | Memory for HUMAnN                                                | -                              |
+| `--humann_extra`            | -            | Additional HUMAnN options                                        | -                              |
 
-#### GO-term parameters
+#### Consensus Pathway Analysis Parameters
 
-| Parameter           | Default | Description                                                                                              | Options |
-|---------------------|---------|----------------------------------------------------------------------------------------------------------|---------|
-| `--go_term_db`      | NULL    | Path to the directory where the GO-term database is located                                              |    -    |
+| Parameter                   | Default      | Description                                                      | Options                        |
+|-----------------------------|--------------|------------------------------------------------------------------|--------------------------------|
+| `--goterm_db`               | NULL         | GOterms database directory                                       | -                              |
+| `--goterm_cpu`              | 2            | CPUs for GOterm analysis                                         | -                              |
+| `--goterm_mem`              | 16 GB        | Memory for GOterm analysis                                       | -                              |
+| `--cpa_cpu`                 | 2            | CPUs for consensus pathway analysis                              | -                              |
+| `--cpa_mem`                 | 16 GB        | Memory for consensus pathway analysis                            | -                              |
+
+#### Descriptive Profiling Analysis Parameters
+
+| Parameter                   | Default      | Description                                                      | Options                        |
+|-----------------------------|--------------|------------------------------------------------------------------|--------------------------------|
+| `--humann_renorm_units`     | cpm          | Pathway abundance normalization units                            | `cpm`, `relab`                 |
+| `--norm_path_cpu`           | 2            | CPUs for descriptive profiling                                   | -                              |
+| `--norm_path_mem`           | 16 GB        | Memory for descriptive profiling                                 | -                              |
+| `--join_path_cpu`           | 1            | CPUs for join pathway                                            | -                              |
+| `--join_path_mem`           | 8 GB         | Memory for join pathway                                          | -                              |
+| `--desc_cpu`                | 1            | CPUs for descriptive analysis                                    | -                              |
+| `--desc_mem`                | 8 GB         | Memory for descriptive analysis                                  | -                              |
 
 ## Input Files
 
