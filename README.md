@@ -10,32 +10,6 @@
 
 ![](images/pipeline.png)
 
-## Dataset
-
-### Data 1
-
-Download the data from [**Open Science Data Repository (OSDR)**](https://www.nasa.gov/osdr/). We are currently using the [_OSD-809_](https://osdr.nasa.gov/bio/repo/data/studies/OSD-809) dataset.
-Description: Effects of an anaerobic membrance bioreactor upset event on nitrogen speciation and microbial community in a downstream phototrophic membrane bioreactor.
-
-* Factors: 'Time'
-* Assay: Metagenomic sequencing - Whole Genome Shotgun Sequencing - Illumina Nextera Kit
-* Device Platform: Illumina
-* Samples: 12
-* Sample Type: Paired-end
-
-### Data 2
-
-Download the data from [**SRA**](https://www.ncbi.nlm.nih.gov/sra?linkname=bioproject_sra_all&from_uid=779554).
-
-_BioProject_: PRJNA779554
-Description: Metagenomic analysis of Rhizosphere soil. 
-Publication: "A framework for the targeted recruitment of crop-beneficial soil taxa based on network analysis of metagenomic data." doi: 10.1186/s40168-022-01438-1
-
-* Assay: Shotgun Metagenome Sequencing (WGS)
-* Device Platform: Illumina NovaSeq 6000
-* Samples: 30
-* Sample Type: Paired-end
-
 ## Installation
 
 > [!NOTE]
@@ -133,36 +107,67 @@ nextflow main.nf \\
 
 ### Required Files
 
-  1. **Sample Sheet** in `CSV` format. Below are two examples of how the samplesheet should look like:
-  
-  Example 1: For dataset with exp_conditions (factor) information.
+  ### Required Files
 
-  ```csv
-  sample,exp_conditions,fastq_1,fastq_2
-  SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
-  SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
-  SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-  ```
+  1. **Sample Sheet (CSV format)**  
+    Prepare a CSV file listing your samples.  
+    - With experimental conditions (factors):
+      ```csv
+      sample,exp_conditions,fastq_1,fastq_2
+      SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+      SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+      SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+      ```
+    - Without experimental conditions:
+      ```csv
+      sample,fastq_1,fastq_2
+      SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
+      SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
+      SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
+      ```
 
-  Example 2: For dataset without exp_conditions (factor) information.
+  2. **Paired-end FASTQ files**  
+    Provide sequencing data in `.fastq.gz` or `.fastq` format.
 
-  ```csv
-  sample,fastq_1,fastq_2
-  SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
-  SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
-  SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-  ```
+  3. **KneadData Database**  
+    Download Bowtie2-generated databases using:
+    ```bash
+    kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
+    ```
+    List available databases:
+    ```bash
+    kneaddata_database --available
+    ```
+    Custom reference databases are supported. See [KneadData README](https://github.com/biobakery/kneaddata).
 
-  2. **FASTQ files**: Paired-end FASTQ files. In `.fastq.gz` and `.fastq` formats.
-   
-  3. **KneadData database**: Download the [KneadData database](https://huttenhower.sph.harvard.edu/kneaddata) and provide the path to the database directory.
-   
-  4. **MetaPhlAn database**: Download the MetaPhlAn database
+    > [!NOTE]
+    > Only Bowtie2-generated databases are supported.
 
-  5. **HUMAnN nucleotide database**: Download the HUMAnN nucleotide database
-   
-  6. **HUMAnN protein database**: Download the HUMAnN protein database
+  4. **MetaPhlAn Database**  
+    Download with:
+    ```bash
+    metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
+    ```
+    Default index: `mpa_vJun23_CHOCOPhlAnSGB_202403`.
 
+    Alternatively, download from [Segata Lab FTP](http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D) and untar the folder.
+
+    > [!CAUTION]
+    > Do **not** use the latest MetaPhlAn database; it is incompatible with HUMAnN 3.9. 
+    > For more information please consult the [BioBakery forum](https://forum.biobakery.org/)
+
+    See [MetaPhlAn README](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4.1) for details.
+
+  5. **HUMAnN Nucleotide and Protein Databases**  
+    Download both nucleotide and protein databases:
+    ```bash
+    humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
+    ```
+    View available databases:
+    ```bash
+    humann_databases --available
+    ```
+    More info: [HUMAnN README](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases)
 ## Output
 
 
