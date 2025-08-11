@@ -107,78 +107,74 @@ nextflow main.nf \\
 
 ### Required Files
 
-  ### Required Files
+**Step 1:** Prepare a **Sample Sheet (CSV format)** listing your samples and metadata information.
 
-  1. **Sample Sheet (CSV format)**  
-    Prepare a CSV file listing your samples.
+ With experimental conditions (factors):
 
-    - With experimental conditions (factors):
-
-      ```csv
+```csv
       sample,exp_conditions,fastq_1,fastq_2
       SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
       SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
       SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-      ```
+```
 
-  - Without experimental conditions:
+ Without experimental conditions:
 
-      ```csv
+```csv
       sample,fastq_1,fastq_2
       SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
       SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
       SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
-      ```
+```
 
-  1. Provide **Paired-end FASTQ files** in `.fastq.gz` or `.fastq` format.
+**Step 2:** Provide **Paired-end FASTQ files** in `.fastq.gz` or `.fastq` format.
 
-  2. **KneadData Database**  
-    Download Bowtie2-generated databases using:
+**Step 3:** Download **KneadData Database** by running the following command
 
-    ```bash
+```bash
     kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
-    ```
+```
 
-    List available databases:
+To view the list of available databases:
 
-    ```bash
+```bash
     kneaddata_database --available
-    ```
+```
 
-    Custom reference databases are supported. See [KneadData README](https://github.com/biobakery/kneaddata).
+Alternatively, you can also build your own custom reference database. See [KneadData README](https://github.com/biobakery/kneaddata) for more information.
 
-    > [!NOTE]
-    > Only Bowtie2-generated databases are supported.
+> [!NOTE]
+> Only Bowtie2-generated databases are supported.
 
-  3. Download **MetaPhlAn Database**:
+**Step 4:** Download **MetaPhlAn Database** by the following command
 
-    ```bash
+```bash
     metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
-    ```
+```
 
-    Default index: `mpa_vJun23_CHOCOPhlAnSGB_202403`.
+Presently, the default index has been set to `mpa_vJun23_CHOCOPhlAnSGB_202403`. 
 
-    Alternatively, download from [Segata Lab FTP](http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D) and untar the folder.
+Alternatively, you can also download from [Segata Lab FTP](http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D). If following this, please do untar the file.
 
-    > [!CAUTION]
-    > Do **not** use the latest MetaPhlAn database; it is incompatible with HUMAnN 3.9. 
-    > For more information please consult the [BioBakery forum](https://forum.biobakery.org/)
+> [!CAUTION]
+> Do **not** use the latest MetaPhlAn database; it is incompatible with HUMAnN 3.9. 
+> For more information please consult the [BioBakery forum](https://forum.biobakery.org/)
 
-    See [MetaPhlAn README](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4.1) for details.
+For more information please see [MetaPhlAn README](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4.1).
 
-  4. Download both **HUMAnN Nucleotide and Protein Databases**
+**Step 5:** Download both **HUMAnN Nucleotide and Protein Databases** by the following command
 
-    ```bash
+```bash
     humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
-    ```
+```
 
-   To view the available databases:
+To view the available databases:
 
-    ```bash
+```bash
     humann_databases --available
-    ```
+```
 
-    More info: [HUMAnN README](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases)
+For more information, please review [HUMAnN README](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases)
 
 ## Output
 
