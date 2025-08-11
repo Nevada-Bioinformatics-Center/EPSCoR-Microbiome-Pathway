@@ -178,5 +178,55 @@ For more information, please review [HUMAnN README](https://github.com/biobakery
 
 ## Output
 
+The pipeline generates the following output files:
+
+> [!NOTE]
+> The output files are stored in nested directories within the user-defined output directory.
+
+1. **kneaddata_out**
+    -  Processed (decontaminated, trimmed) FASTQ files in `.fastq.gz` format. 
+    -  `_kneaddata.log` file containing the log of the KNEADING_DATA process for each samples.
+    -  `/fastqc` directory containing FastQC reports for the processed FASTQ files in `.html` and the corresponding `.zip` files.
+
+> Please note that these have symbolic links to the nextflow working directory.
+
+2. **metaphlan_out**
+    -  `_profile.tsv` file containing the taxonomic profile of the samples.
+    -  `_profile.txt` file containing the taxonomic profile in text format.
+    -  `_metaphlan.log` file will contain warnings and errors from the MetaPhlAn process. Else it is empty.
+    -  `/merge` directory containing the merged taxonomic profile across all samples in `_profile.tsv` format. This file is in `tsv` format.
+    -  `/plots` directory containing the taxonomic profile plots in `.png` format. The plots include:
+        -  `genus_abundance.png`: Genus-level abundance plot.
+        -  `phyla_abundance.png`: Phyla-level abundance plot.
+        -  `scaled_abundances_top10.png`: Scaled abundance plot for the top 10 taxa.
+        -  `Bray_NMDS.png`: Bray-Curtis NMDS plot.
+        -  `alpha_diversity_shannon.png`: Shannon diversity plot.
+        -  `NMDS.png`: NMDS plot of the taxonomic profile.
+        -  `alpha_diversity_inverse_simpson.png`:  Inverse Simpson diversity plot
+
+3. **humann_out**
+    -  `_genefamilies.tsv` file containing the gene families profile.
+    -  `_pathabundance.tsv` file containing the pathway abundance profile.
+    -  `_pathcoverage.tsv` file containing the pathway coverage profile.
+    -  `_humann.log` file contains the log of the FUNCTIONAL_PROFILING process for each sample.
+    -  `/pathabundance` directory containing the counts per million (CPM) converted pathway abundance profile across all samples in `_renorm_pathabundance.tsv` format.
+    -  `/merge` directory containing the merged CPM converted pathway abundance profile across all samples in `.tsv` format.
+
+4. **cpa_out**
+    -  `abundances.csv` file containing the gene families abundances across all samples.
+    -  `mapping.csv` file containing the mapping of gene families to UniProt.
+    -  `mappingAbundanceMatrix.csv` file containing the mapping of gene families to UniProt with abundance values.
+    -  `goterms-results.csv` file containing the GO terms results with ID, p-value, normalized score, pFDR, and description.
+    -  `consensus-results.csv` file containing the consensus results with ID, description of pathways, and p-fisher value.
+    -  `/export_Knead` directory containing the pair-wise comparison of experimental conditions. The files are in `.csv` format.
+    -  `Pathway_Bubble_Plot.png` file containing the bubble plot of the pathways.
+    -  `Pathway_Networks_Plot.png` file containing the network plot of the pathways.
+
+5. **desc_out**
+    - `top_path_taxa_results.tsv` file containing the top pathway taxa results.
+
+6. **multiqc_out**
+   - `multiqc_report.html` file containing the MultiQC report of the pipeline run.
+   - `/multiqc_data` directory containing the MultiQC data files.
 
 ## Citation
