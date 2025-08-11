@@ -110,15 +110,19 @@ nextflow main.nf \\
   ### Required Files
 
   1. **Sample Sheet (CSV format)**  
-    Prepare a CSV file listing your samples.  
+    Prepare a CSV file listing your samples.
+
     - With experimental conditions (factors):
+
       ```csv
       sample,exp_conditions,fastq_1,fastq_2
       SAMPLE1-ID,NN,sample1_R1.fastq.gz,sample1_R2.fastq.gz
       SAMPLE2-ID,NN,sample2_R1.fastq.gz,sample2_R2.fastq.gz
       SAMPLE3-ID,NN,sample3_R1.fastq.gz,sample3_R2.fastq.gz
       ```
-    - Without experimental conditions:
+
+  - Without experimental conditions:
+
       ```csv
       sample,fastq_1,fastq_2
       SAMPLE1-ID,sample1_R1.fastq.gz,sample1_R2.fastq.gz
@@ -126,28 +130,32 @@ nextflow main.nf \\
       SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
       ```
 
-  2. **Paired-end FASTQ files**  
-    Provide sequencing data in `.fastq.gz` or `.fastq` format.
+  1. Provide **Paired-end FASTQ files** in `.fastq.gz` or `.fastq` format.
 
-  3. **KneadData Database**  
+  2. **KneadData Database**  
     Download Bowtie2-generated databases using:
+
     ```bash
     kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
     ```
+
     List available databases:
+
     ```bash
     kneaddata_database --available
     ```
+
     Custom reference databases are supported. See [KneadData README](https://github.com/biobakery/kneaddata).
 
     > [!NOTE]
     > Only Bowtie2-generated databases are supported.
 
-  4. **MetaPhlAn Database**  
-    Download with:
+  3. Download **MetaPhlAn Database**:
+
     ```bash
     metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
     ```
+
     Default index: `mpa_vJun23_CHOCOPhlAnSGB_202403`.
 
     Alternatively, download from [Segata Lab FTP](http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D) and untar the folder.
@@ -158,16 +166,20 @@ nextflow main.nf \\
 
     See [MetaPhlAn README](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4.1) for details.
 
-  5. **HUMAnN Nucleotide and Protein Databases**  
-    Download both nucleotide and protein databases:
+  4. Download both **HUMAnN Nucleotide and Protein Databases**
+
     ```bash
     humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
     ```
-    View available databases:
+
+   To view the available databases:
+
     ```bash
     humann_databases --available
     ```
+
     More info: [HUMAnN README](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases)
+
 ## Output
 
 
