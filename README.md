@@ -6,6 +6,8 @@
 
 ## Introduction
 
+This is a scalable and reproducible Nextflow pipeline for comprehensive taxonomic, functional, and consensus pathway analysis of metagenomes. The pipeline supports execution on local machines, as well as HPC and cloud environments. It integrates established tools for sequence quality control, taxonomic profiling, and functional profiling, as well as a consensus-based pathway enrichment strategy that combines multiple statistical approaches to improve robustness. In addition, the pipeline compiles a descriptive summary that links microbial taxa with associated functions.
+
 ## Pipeline Summary
 
 ![](images/pipeline.png)
