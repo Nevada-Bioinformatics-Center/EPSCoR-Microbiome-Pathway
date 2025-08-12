@@ -123,7 +123,7 @@ The pipeline currently supports two execution profiles set by `-profile` option:
 
 - **cluster**: Runs the pipeline on a cluster using SLURM.
 
-> [!TIPS]
+> [!NOTE]
 > To run the pipeline in the `cluster` profile, please configure the `conf/cluster.config` file with your cluster settings.
 > Accordingly, set the memory and time limits for each process in the `nextflow.config` file.
 
