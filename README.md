@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This is a scalable and reproducible Nextflow pipeline for comprehensive taxonomic, functional, and consensus pathway analysis of metagenomes. The pipeline supports execution on local machines, as well as HPC and cloud environments. It integrates established tools for sequence quality control, taxonomic profiling, and functional profiling, as well as a consensus-based pathway enrichment strategy that combines multiple statistical approaches to improve robustness. In addition, the pipeline compiles a descriptive summary that links microbial taxa with associated functions.
+This is a scalable and reproducible pipeline, built in [Nextflow](https://www.nextflow.io/) for comprehensive taxonomic, functional, and consensus pathway analysis of metagenomes. It supports execution on local machines, as well as HPC and cloud environments. It integrates established tools for sequence quality control, taxonomic profiling, and functional profiling, as well as a consensus-based pathway enrichment strategy that combines multiple statistical approaches to improve robustness. In addition, the pipeline compiles a descriptive summary that links microbial taxa with associated functions.
 
 ## Pipeline Summary
 
@@ -16,13 +16,12 @@ This is a scalable and reproducible Nextflow pipeline for comprehensive taxonomi
 
 > [!NOTE]
 > If you are new to Nextflow, please refer to the [this page](https://nextflow.io/docs/latest/install.html) on how to set-up Nextflow.
-> We have tested the pipeline on the above mentioned datasets. Please, download the datasets or choose your own dataset.
 
 ## Usage
 
 ### Basic Usage
 
-1. Run the command below to execute the pipeline.
+1. Run the command below to execute the pipeline:
 
   ```bash
 nextflow main.nf \\
@@ -35,6 +34,12 @@ nextflow main.nf \\
             --humann_protein_db /path/to/folder/humann/protein/databases/download \\
             --humann_pathway_db <PATHWAY_DB> \\
             --go_term_db /path/to/folder/go-term/database/download
+```
+
+For help on the available parameters, run the command below:
+
+```bash
+nextflow main.nf --help
 ```
 
 ### Parameters
@@ -90,8 +95,10 @@ nextflow main.nf \\
 | `--goterm_db`               | NULL         | GOterms database directory                                       | -                              |
 | `--goterm_cpu`              | 2            | CPUs for GOterm analysis                                         | -                              |
 | `--goterm_mem`              | 16 GB        | Memory for GOterm analysis                                       | -                              |
+| `--goterm_time`             | -            | Process time (cluster only)                                      | -                              |
 | `--cpa_cpu`                 | 2            | CPUs for consensus pathway analysis                              | -                              |
 | `--cpa_mem`                 | 16 GB        | Memory for consensus pathway analysis                            | -                              |
+| `--cpa_time`                | -            | Process time (cluster only)                                      | -                              |
 
 #### Descriptive Profiling Analysis Parameters
 
@@ -100,10 +107,35 @@ nextflow main.nf \\
 | `--humann_renorm_units`     | cpm          | Pathway abundance normalization units                            | `cpm`, `relab`                 |
 | `--norm_path_cpu`           | 2            | CPUs for descriptive profiling                                   | -                              |
 | `--norm_path_mem`           | 16 GB        | Memory for descriptive profiling                                 | -                              |
+| `--norm_path_time`          | -            | Process time (cluster only)                                      | -                              |
 | `--join_path_cpu`           | 1            | CPUs for join pathway                                            | -                              |
 | `--join_path_mem`           | 8 GB         | Memory for join pathway                                          | -                              |
+| `--join_path_time`          | -            | Process time (cluster only)                                      | -                              |
 | `--desc_cpu`                | 1            | CPUs for descriptive analysis                                    | -                              |
 | `--desc_mem`                | 8 GB         | Memory for descriptive analysis                                  | -                              |
+| `--desc_time`               | -            | Process time (cluster only)                                      | -                              |
+
+### Configuation Profiles
+
+The pipeline currently supports two execution profiles set by `-profile` option:
+
+- **local**: Runs the pipeline on a local machine.
+
+- **cluster**: Runs the pipeline on a cluster using SLURM.
+
+> [!TIPS]
+> To run the pipeline in the `cluster` profile, please configure the `conf/cluster.config` file with your cluster settings.
+> Accordingly, set the memory and time limits for each process in the `nextflow.config` file.
+
+### Helpful Nextflow Commands
+
+- The pipeline does not automatically cleans the work directory. However, in the `nextflow.config` file you can set `cleanup` directive to `true`.
+  or
+- You can optionally clean the work directory by running the following command:
+
+```bash
+nextflow clean -f
+```
 
 ## Input Files
 
