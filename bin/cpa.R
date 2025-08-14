@@ -91,7 +91,7 @@ if (length(remaining_ids) > 0) {
           debug = FALSE,
           paginate = FALSE
         )
-      }, timeout = 60)
+      }, timeout = 600)
     }, error = function(e) {
       message("Error in batch ", i, ": ", e$message)
       data.frame(From = batch_ids, To = batch_ids)
