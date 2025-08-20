@@ -156,6 +156,13 @@ allDEResults <- lapply(seq_len(nrow(comparisons)), function(i) {
   expr <- cbind(mappedabundanceMat[, group1_samples, drop=FALSE],
                 mappedabundanceMat[, group2_samples, drop=FALSE])
   expr <- log2(expr + 1) %>% as.matrix()
+
+  # Variance check: skip only this comparison if all genes have zero variance
+  if (all(apply(expr, 1, var) == 0)) {
+    warning(sprintf("Skipping comparison %s vs %s: no genes with non-zero variance.", group2, group1))
+    return(NULL)
+  }
+
   se <- SummarizedExperiment::SummarizedExperiment(
     assays = list(expr = expr),
     colData = data.frame(
@@ -177,6 +184,8 @@ allDEResults <- lapply(seq_len(nrow(comparisons)), function(i) {
     result = result
   )
 })
+
+allDEResults <- allDEResults[!sapply(allDEResults, is.null)]
 
 dir.create(file.path(output_dir, "exportKnead"), showWarnings = FALSE)
 for (deRes in allDEResults){
