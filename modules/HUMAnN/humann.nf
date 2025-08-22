@@ -2,14 +2,13 @@
  * Module: HUMAnN
  * Description: This module performs HUMAnN analysis on metagenomic data.
  * Version: v3.9
- * Author: Kanishka Manna
+ * Author: Kanishka Manna and Hans Vasquez-Gross
  */
 
 process FUNCTIONAL_PROFILING {
     tag "HUMAnN: ${sample_id}"
 
-    label 'humann_conda'
-    label 'humann_docker'
+    label 'humann'
     
     publishDir "${params.output}/humann_out", mode: 'copy'
 

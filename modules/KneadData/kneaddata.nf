@@ -2,14 +2,13 @@
  * Module: KneadData
  * Description: This module performs kneading of metagenomic data.
  * Version: v0.12.2
- * Author: Kanishka Manna
+ * Author: Kanishka Manna and Hans Vasquez-Gross
  */
 
 process KNEADING_DATA {
     tag "KneadData: ${sample_id}"
 
-    label 'kneaddata_conda'
-    label 'kneaddata_docker'
+    label 'kneaddata'
 
     publishDir "${params.output}/kneaddata_out", mode: 'symlink'
 

@@ -9,8 +9,7 @@ process TAXONOMIC_PROFILING {
 
     tag "MetaPhlAn: ${sample_id}"
 
-    label 'metaphlan_conda'
-    label 'metaphlan_docker'
+    label 'metaphlan'
 
     publishDir "${params.output}/metaphlan_out", mode: 'copy'
 

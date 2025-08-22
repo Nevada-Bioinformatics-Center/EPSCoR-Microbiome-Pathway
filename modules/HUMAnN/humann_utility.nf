@@ -2,7 +2,7 @@
  * Module: HUMAnN Utility tools and Descriptive Profiling
  * Description: This module performs downstream analysis on Pathway Abundance files from HUMAnN.
  * Version: v3.9
- * Author: Kanishka Manna
+ * Author: Kanishka Manna & Hans Vasquez-Gross
  */
 
 
@@ -10,7 +10,7 @@
 process NORMALIZE_PATHWAY_ABUNDANCE {
     tag "humann_renorm_table"
 
-    label 'humann_conda'
+    label 'humann'
 
     publishDir "${params.output}/humann_out/pathabundance", mode: 'symlink'
 
@@ -33,7 +33,7 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
 process JOIN_PATHWAY_ABUNDANCE {
     tag "humann_join_tables"
 
-    label 'humann_conda'
+    label 'humann'
 
     publishDir "${params.output}/humann_out/merge", mode: 'copy'
 
@@ -55,7 +55,7 @@ process JOIN_PATHWAY_ABUNDANCE {
 process DESCRIPTIVE_PROFILING {
     tag "Descriptive Profiling"
 
-    label 'desc_conda'
+    label 'desc'
 
     publishDir "${params.output}/desc_out", mode: 'move'
 

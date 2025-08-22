@@ -10,8 +10,7 @@ process DOWNLOAD_KNEADDATA_DB {
 
     tag "kneaddata_download: ${database};${build}"
 
-    label 'kneaddata_conda'
-    label 'kneaddata_docker'
+    label 'kneaddata'
     label 'medium'
 
     publishDir "${params.database}/kneaddata_db", mode: 'symlink'
