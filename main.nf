@@ -42,7 +42,68 @@ include { CONSENSUS_PATHWAY_ANALYSIS } from './modules/CPA/cpa.nf'
 include { RUN_MULTIQC_PROCESSED } from './modules/MultiQC/multiqc.nf'
 include { RUN_MULTIQC_RAW } from './modules/MultiQC/multiqc.nf'
 
+// ---------- One-time Singularity container warmup (runs on submit node) ----------
 
+// Build a list of image URLs from your params.containers map
+Channel.fromList( params.containers.values().toList() )
+       .set { CONTAINER_URLS }
+
+// A tiny gating helper – blocks any channel until a token is emitted
+def gate(ch, token) {
+  token.combine(ch).map { _, x -> x }
+}
+
+// 3) Warmup process: pulls each image once (on submit node)
+process CONTAINER_WARMUP {
+  label 'bootstrap'  // config: executor=local, container=null, conda=null, maxForks=1
+  publishDir false
+
+  input:
+  val image
+
+  output:
+  val(image), emit: done
+
+  script:
+  """
+  set -euo pipefail
+
+  # Where the final .sif files will live (Nextflow also uses this path)
+  CACHE="\${NXF_SINGULARITY_CACHEDIR:-\$HOME/.cache/nextflow/singularity}"
+  mkdir -p "\$CACHE"
+  cd "\$CACHE"
+
+  # Ensure Singularity's own caches/tmp are on a large, writable filesystem
+  export SINGULARITY_CACHEDIR="\${SINGULARITY_CACHEDIR:-\$CACHE/_blobcache}"
+  export SINGULARITY_TMPDIR="\${SINGULARITY_TMPDIR:-\${TMPDIR:-\$CACHE/_tmp}}"
+  export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-\${TMPDIR:-/tmp}/xdg-\$USER}"
+  mkdir -p "\$SINGULARITY_CACHEDIR" "\$SINGULARITY_TMPDIR" "\$XDG_RUNTIME_DIR"
+
+  name=\$(echo "$image" | tr '/:@' '---').img
+
+  # Pull with retries/backoff to ride out transient network resets
+  tries=5
+  delay=10
+  for attempt in \$(seq 1 \$tries); do
+    if [[ -f "\$name" ]]; then
+      echo "[warmup] found \$name"
+      break
+    fi
+    echo "[warmup] (\$attempt/\$tries) pulling $image -> \$name"
+    if singularity pull --name "\$name" "docker://$image"; then
+      break
+    fi
+    echo "[warmup] pull failed; sleeping \$delay s before retry..."
+    sleep "\$delay"
+    delay=\$(( delay * 2 ))
+  done
+
+  # Final check
+  [[ -f "\$name" ]] || { echo "[warmup] ERROR: failed to obtain \$name after retries"; exit 2; }
+
+  echo "[warmup] ready: \$name"
+  """
+}
 
 
 
@@ -139,9 +200,20 @@ workflow  {
         .map { sample_id, _factors, read, dbs -> tuple(sample_id, read, dbs) }
         .set { kneaddata_inputs }
 
+
+    // >>> Call the warmup here (runs once on submit node)
+    CONTAINER_WARMUP(CONTAINER_URLS)
+
+    // Grab its token channel
+    def WARMUP_TOKEN = CONTAINER_WARMUP.out.done.collect().map { true }  // one value after all pulls
     
-    // Run KneadData
-    KNEADING_DATA(kneaddata_inputs)
+    // Keep original tuple, drop token (last element)
+    kneaddata_inputs_gated = kneaddata_inputs
+      .combine(WARMUP_TOKEN)
+      .map { sample_id, reads, db, _ -> tuple(sample_id, reads, db) }
+    
+    // Run KneadData (safe to start now)
+    KNEADING_DATA(kneaddata_inputs_gated)
 
 
 

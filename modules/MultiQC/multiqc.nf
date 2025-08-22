@@ -2,15 +2,14 @@
  * Module: MultiQC
  * Description: This module aggregates all QC and other info from Read Processing/Kneading Data into a report.
  * Version: v1.29
- * Author: Kanishka Manna
+ * Author: Kanishka Manna and Hans Vasquez-Gross
  */
 
 process RUN_MULTIQC_PROCESSED {
 
     tag "MultiQC"
 
-    label 'multiqc_conda'
-    label 'multiqc_docker'
+    label 'multiqc'
 
     publishDir "${params.output}/multiqc_out/processed", mode: 'copy'
 

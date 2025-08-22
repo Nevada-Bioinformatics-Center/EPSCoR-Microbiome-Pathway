@@ -9,7 +9,7 @@
 process GENERATE_GOTERMS {
     tag "Gene Ontology Terms"
 
-    label 'go_term_conda'
+    label 'go_term'
     label 'medium'
 
     publishDir "${params.goterm_db}", mode: 'symlink'
