@@ -14,7 +14,7 @@ RUN R -q -e 'install.packages(c("pacman","ggplot2","dplyr","viridis","viridisLit
     R -q -e 'BiocManager::install(c("phyloseq","mia","vegan"))'
 
 # bake the script into PATH so your process can call `taxa_viz.r`
-COPY modules/MetaPhlAn/tax_viz/taxa_viz.r /usr/local/bin/taxa_viz.r
+COPY bin/taxa_viz.r /usr/local/bin/taxa_viz.r
 RUN chmod +x /usr/local/bin/taxa_viz.r
 
 # Avoid R trying to write to system lib at runtime
