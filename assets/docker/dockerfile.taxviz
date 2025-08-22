@@ -1,21 +1,23 @@
-# Bioconductor base (R 4.3; Bioconductor 3.18) – stable for phyloseq/mia/vegan
-FROM bioconductor/bioconductor_docker:RELEASE_3_18
+FROM bioconductor/bioconductor_docker:RELEASE_3_19
 
-# System libs for source builds (usually present, but safe to ensure)
+# System libs (safe to keep)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev \
     libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev \
-    libtiff5-dev libjpeg-dev && \
-    rm -rf /var/lib/apt/lists/*
+    libtiff5-dev libjpeg-dev && rm -rf /var/lib/apt/lists/*
 
-# Preinstall all R packages used by taxa_viz.r
-# (pacman is kept so your script can p_load() without installing)
+# R packages
 RUN R -q -e 'install.packages(c("pacman","ggplot2","dplyr","viridis","viridisLite"))' && \
-    R -q -e 'BiocManager::install(c("phyloseq","mia","vegan"))'
+    R -q -e 'BiocManager::install(c("phyloseq","vegan","mia"), ask=FALSE, update=TRUE)'
 
-# bake the script into PATH so your process can call `taxa_viz.r`
+# Build-time assertion: ensure MIA exports the MetaPhlAn importer
+RUN R -q -e 'ns <- asNamespace("mia"); \
+             ok <- exists("importMetaPhlAn", where=ns, inherits=FALSE) || \
+                   exists("importMetaphlan",  where=ns, inherits=FALSE); \
+             if(!ok) stop(sprintf("mia %s lacks MetaPhlAn importer", as.character(packageVersion("mia"))))'
+
+# (Optional) bake your script into PATH, else call it via Rscript from repo
 COPY bin/taxa_viz.r /usr/local/bin/taxa_viz.r
 RUN chmod +x /usr/local/bin/taxa_viz.r
 
-# Avoid R trying to write to system lib at runtime
 ENV RENV_CONFIG_CACHE_ENABLED=FALSE
