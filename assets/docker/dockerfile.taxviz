@@ -1,22 +1,20 @@
-FROM bioconductor/bioconductor_docker:RELEASE_3_19
+FROM bioconductor/bioconductor_docker:RELEASE_3_20
 
-# System libs (safe to keep)
+# System libs often needed for R packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libxml2-dev libcurl4-openssl-dev libssl-dev libfontconfig1-dev \
     libfreetype6-dev libharfbuzz-dev libfribidi-dev libpng-dev \
     libtiff5-dev libjpeg-dev && rm -rf /var/lib/apt/lists/*
 
-# R packages
-RUN R -q -e 'install.packages(c("pacman","ggplot2","dplyr","viridis","viridisLite"))' && \
-    R -q -e 'BiocManager::install(c("phyloseq","vegan","mia"), ask=FALSE, update=TRUE)'
+# Install CRAN + Bioconductor packages
+RUN R -q -e 'install.packages(c("pacman","ggplot2","dplyr","viridis","viridisLite"))' \
+         -e 'BiocManager::install(c("mia","phyloseq","vegan"), ask=FALSE, update=TRUE)' \
+         -e 'cat("Bioc version:", as.character(BiocManager::version()), "\\n"); \
+             cat("mia version:", as.character(packageVersion("mia")), "\\n")' \
+         -e 'ns <- asNamespace("mia"); \
+             stopifnot("importMetaPhlAn"   %in% getNamespaceExports("mia")); \
+             stopifnot("convertToPhyloseq" %in% getNamespaceExports("mia"))'
 
-# Build-time assertion: ensure MIA exports the MetaPhlAn importer
-RUN R -q -e 'ns <- asNamespace("mia"); \
-             ok <- exists("importMetaPhlAn", where=ns, inherits=FALSE) || \
-                   exists("importMetaphlan",  where=ns, inherits=FALSE); \
-             if(!ok) stop(sprintf("mia %s lacks MetaPhlAn importer", as.character(packageVersion("mia"))))'
-
-# (Optional) bake your script into PATH, else call it via Rscript from repo
 COPY bin/taxa_viz.r /usr/local/bin/taxa_viz.r
 RUN chmod +x /usr/local/bin/taxa_viz.r
 
