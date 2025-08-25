@@ -346,7 +346,11 @@ workflow  {
     JOIN_PATHWAY_ABUNDANCE(renorm_pathabun_ch)
 
     // Run descriptive profiling
-    DESCRIPTIVE_PROFILING(JOIN_PATHWAY_ABUNDANCE.out.join_table)
+    desc_samplesheet_file_ch = file(params.samplesheet)
+    DESCRIPTIVE_PROFILING(
+        JOIN_PATHWAY_ABUNDANCE.out.join_table, 
+        desc_samplesheet_file_ch
+    )
 
 
 

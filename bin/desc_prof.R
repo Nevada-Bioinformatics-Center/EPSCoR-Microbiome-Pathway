@@ -3,14 +3,18 @@
 #   Descriptive profiling                                    #
 #   Authors: Kanishka Manna & Hans Vasquez-Gross             #
 #   Updated: fix list-column bug; use per-sample MAX metric  #
+#   Updated: Added exp conditions, sample columns; fix       #
+#            abundance values from unclassified and          #
+#            classified taxa                                 #
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 2) {
-  stop("Usage: Rscript desc_prof.R <joined_pathabundance.tsv> <output.tsv>")
+if (length(args) < 3) {
+  stop("Usage: Rscript desc_prof.R <joined_pathabundance.tsv> <output.tsv> <samplesheet.csv>")
 }
 
 input_file  <- args[1]
 output_file <- args[2]
+samplesheet <- args[3]
 
 # ---------- Libraries ----------
 options(repos = c(CRAN = "https://cloud.r-project.org"))
@@ -19,8 +23,11 @@ suppressPackageStartupMessages({
 })
 pacman::p_load(data.table, dplyr, tidyr, stringr)
 
-# ---------- Load (robust) ----------
-# Disable quoting; allow ragged rows to fill with NA
+# ---------- Load sample metadata ----------
+meta <- data.table::fread(samplesheet, sep = ",", header = TRUE, data.table = FALSE)
+meta <- meta[, intersect(c("sample", "exp_conditions"), colnames(meta)), drop = FALSE]
+
+# ---------- Load the merged renorm path-abundance file ----------
 df <- data.table::fread(
   input_file,
   sep = "\t",
@@ -34,52 +41,24 @@ df <- data.table::fread(
 # Normalize the first header (some HUMAnN files start with "#")
 colnames(df)[1] <- sub("^#\\s*", "", colnames(df)[1])
 
-# ---------- Early exit if no taxonomy ----------
-first_col <- df[[1]]
-if (all(first_col %in% c("UNMAPPED", "UNINTEGRATED")) || !any(grepl("\\|", first_col))) {
-  writeLines("No taxonomy data found. Skipping descriptive profiling.", output_file)
-  quit(save = "no", status = 0)
-}
-
 # ---------- Parse taxonomy + pathway ----------
 df <- df %>%
   mutate(
     taxonomy = ifelse(grepl("\\|", .[[1]]), sub("^[^|]*\\|", "", .[[1]]), NA),
     genus    = ifelse(!is.na(taxonomy) & grepl("g__", taxonomy),
-                      sub("(g__[^| ]+).*", "\\1", taxonomy), NA),
-    species  = ifelse(!is.na(taxonomy) & grepl("s__", taxonomy),
-                      sub(".*(s__[^| ]+).*", "\\1", taxonomy), NA),
+                      sub("(g__[^| ]+).*", "\\1", taxonomy), "unclassified"),
     Pathway  = ifelse(grepl("\\|", .[[1]]), sub("\\|.*", "", .[[1]]), .[[1]])
   ) %>%
   mutate(
     Pathway = as.character(Pathway),
-    genus   = as.character(genus),
-    species = as.character(species)
+    genus   = as.character(genus)
   )
-
-# Drop non-informative rows
-df_clean <- df %>%
-  filter(
-    !is.na(Pathway),
-    !Pathway %in% c("UNMAPPED", "UNINTEGRATED"),
-    !grepl("^\\d+(\\.\\d+)?$", Pathway),  # accidental numeric-only entries
-    !is.na(genus)
-  )
-
-if (nrow(df_clean) == 0) {
-  writeLines("No rows with genus-level taxonomy after filtering. Skipping descriptive profiling.", output_file)
-  quit(save = "no", status = 0)
-}
 
 # ---------- Identify sample columns & coerce to numeric ----------
-annot_cols  <- c("taxonomy", "genus", "species", "Pathway")
-sample_cols <- setdiff(names(df_clean), annot_cols)
-
-# Coerce candidates to numeric (non-numeric -> NA)
-df_clean[sample_cols] <- lapply(df_clean[sample_cols], function(x) suppressWarnings(as.numeric(x)))
-
-# Keep only truly numeric columns
-is_num <- vapply(df_clean[sample_cols], is.numeric, logical(1))
+annot_cols  <- c("taxonomy", "genus", "Pathway")
+sample_cols <- setdiff(names(df), annot_cols)
+df[sample_cols] <- lapply(df[sample_cols], function(x) suppressWarnings(as.numeric(x)))
+is_num <- vapply(df[sample_cols], is.numeric, logical(1))
 sample_cols <- sample_cols[is_num]
 
 if (length(sample_cols) == 0) {
@@ -87,28 +66,35 @@ if (length(sample_cols) == 0) {
   quit(save = "no", status = 0)
 }
 
-# ---------- Row-wise max across samples, drop zero/NA rows ----------
-row_max <- do.call(pmax, c(df_clean[sample_cols], list(na.rm = TRUE)))
-df_clean$RowMax <- row_max
-df_clean <- df_clean %>% filter(is.finite(RowMax), RowMax > 0)
+# ---------- Row-wise max across samples ----------
+row_max <- do.call(pmax, c(df[sample_cols], list(na.rm = TRUE)))
+max_sample_idx <- apply(df[sample_cols], 1, function(x) {
+  if (all(is.na(x))) return(NA)
+  which.max(x)
+})
+max_sample <- names(df[sample_cols])[max_sample_idx]
+df$Abundance <- row_max
+df$SampleName <- max_sample
 
-if (nrow(df_clean) == 0) {
-  writeLines("No non-zero abundances after filtering. Skipping descriptive profiling.", output_file)
-  quit(save = "no", status = 0)
+# ---------- Prepare final table ----------
+final_tbl <- df %>%
+  transmute(
+    Pathway = Pathway,
+    Genus = taxonomy,
+    Abundance = Abundance,
+    SampleName = sub("_Abundance$", "", SampleName)
+  )
+
+# Map ExperimentalConditions from meta using SampleName, only if exp_conditions exists
+if ("exp_conditions" %in% colnames(meta)) {
+  final_tbl$ExperimentalConditions <- meta$exp_conditions[match(final_tbl$SampleName, meta$sample)]
 }
 
-# ---------- Top genus per pathway using MAX ----------
-top_genus <- df_clean %>%
-  group_by(Pathway, genus) %>%
-  summarise(CountsPerMillion = max(RowMax, na.rm = TRUE), .groups = "drop") %>%
-  filter(is.finite(CountsPerMillion)) %>%
-  group_by(Pathway) %>%
-  slice_max(order_by = CountsPerMillion, n = 1, with_ties = FALSE) %>%
-  ungroup()
+final_tbl <- final_tbl %>%
+  filter(!is.na(Genus) | Pathway == "UNMAPPED")
 
 # Safety guard: no list-columns allowed (keeps TSV tidy)
-stopifnot(!any(vapply(top_genus, is.list, logical(1))))
+stopifnot(!any(vapply(final_tbl, is.list, logical(1))))
 
 # ---------- Write ----------
-colnames(top_genus) <- c("Pathway", "Genus", "CountsPerMillion")
-write.table(top_genus, output_file, sep = "\t", row.names = FALSE, quote = FALSE)# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+write.table(final_tbl, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
