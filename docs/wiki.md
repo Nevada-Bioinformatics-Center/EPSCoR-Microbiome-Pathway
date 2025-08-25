@@ -27,6 +27,7 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
     - [Consensus Pathway Analysis](#consensus-pathway-analysis)
     - [Run MultiQC](#run-multiqc)
   - [Configuration](#configuration)
+  - [Helpful Tips](#helpful-tips)
 
 ## Pipeline Overview
 
@@ -234,7 +235,8 @@ The Kneading Data process performs comprehensive quality control and host decont
 - `kneaddata_out/` : Directory containing all KneadData output files organized by sample.
 
 > [!NOTE]
-> All the outputs have symbolic links in the `./results/kneaddata/` directory. If you wish to access the actual files, please navigate to the `work/` directory and locate the respective folders.
+> All the outputs have symbolic links in the `./results/kneaddata/` directory. 
+> If you wish to access the actual files, please navigate to the `work/` directory and locate the respective folders.
 
 ### Taxonomic Profiling
 
@@ -455,3 +457,22 @@ The MultiQC process aggregates quality control (QC) metrics and summary statisti
 - `multiqc_out/`: Directory containing the MultiQC report and associated data files.
 
 ## Configuration
+
+## Helpful Tips
+
+- Nextflow has the ability to cache task executions and re-use them in later runs so to minimize duplicate work. If encountered error or for any other reason, the user can resume the pipeline with the `-resume` flag.
+
+  ```bash
+  nextflow run main.nf -resume
+  ```
+- The pipeline will not automatically delete the work directory. The user may choose to either keep the directory and clean the cache by the following command:
+
+```bash
+nextflow clean [run_name|session_id] [options]
+```
+or, permanently delete it by:
+
+```bash
+rm -rf work
+```
+For more information, please see [here](https://www.nextflow.io/docs/latest/reference/cli.html#clean).
