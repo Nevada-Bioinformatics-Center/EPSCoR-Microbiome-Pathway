@@ -37,7 +37,7 @@ tse <- importMetaPhlAn(merged_taxa_file)
 
 # 'assasy.type' is set to default - "counts"
 # To find assay.type, run assayName(tse) in the console
-phylo <- convertToPhyloseq(tse, assay.type = "counts")
+phylo <- convertToPhyloseq(tse, assay.type = 'metaphlan')
 
 # Add metadata to phyloseq object
 sample_data(phylo) <- metaData
