@@ -4,6 +4,12 @@
 #   Authors: Melanie Hess, Cassandra K. Hui, Kanishka Manna  #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 
+# NOTE from Kanishka
+# RCPA package is not insalling properly with GitHub for Cassandra. 
+# She used install.packages() to install it.
+# It is installing on my workstation with devtools::install_github()
+# Should take a better look into this.
+
 
 # ---------- Parse command-line arguments ---------- #
 args <- commandArgs(trailingOnly = TRUE)
@@ -267,14 +273,17 @@ go_graph <- add_vertices(go_graph, nrow(top_terms),
 # Add edges between nodes sharing common words (excluding stop words)
 for(i in 1:(nrow(top_terms)-1)) {
   for(j in (i+1):nrow(top_terms)) {
-    words_i <- unlist(strsplit(tolower(top_terms$name[i]), " "))
-    words_j <- unlist(strsplit(tolower(top_terms$name[j]), " "))
-    common_words <- intersect(words_i, words_j)
-    common_words <- common_words[!common_words %in% 
-                                   c("of", "the", "a", "in", "to", "by", "and", "or")]
-    if(length(common_words) > 0) {
-      edge_comparison <- top_terms$comparison[i]  # Use comparison from first vertex
-      go_graph <- add_edges(go_graph, c(i, j), weight = length(common_words), comparison = edge_comparison)
+    # Only connect nodes from the same comparison
+    if(top_terms$comparison[i] == top_terms$comparison[j]) {
+      words_i <- unlist(strsplit(tolower(top_terms$name[i]), " "))
+      words_j <- unlist(strsplit(tolower(top_terms$name[j]), " "))
+      common_words <- intersect(words_i, words_j)
+      common_words <- common_words[!common_words %in% 
+                                     c("of", "the", "a", "in", "to", "by", "and", "or")]
+      if(length(common_words) > 0) {
+        go_graph <- add_edges(go_graph, c(i, j), weight = length(common_words), 
+                              comparison = top_terms$comparison[i])
+      }
     }
   }
 }
