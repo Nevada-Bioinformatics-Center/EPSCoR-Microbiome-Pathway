@@ -130,8 +130,8 @@ ggsave(top10plot, file = file.path(exportDir, "scaled_abundances_top10.png"), he
 # Remove samples with all-zero or NA abundance
 phylo <- prune_samples(sample_sums(phylo) > 0, phylo)
 ord.nmds.bray <- ordinate(phylo, method="NMDS", distance="bray")
-ordination_plot <- plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS")
-ggsave(ordination_plot, file = file.path(exportDir, "Bray_NMDS_sample.png"), height = 6, width = 8, units = "in")
+#ordination_plot <- plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS")
+#ggsave(ordination_plot, file = file.path(exportDir, "Bray_NMDS_sample.png"), height = 6, width = 8, units = "in")
 
 nmds_df <- plot_ordination(phylo, ord.nmds.bray, justDF = TRUE)
 
