@@ -27,7 +27,7 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
     - [Consensus Pathway Analysis](#consensus-pathway-analysis)
     - [Run MultiQC](#run-multiqc)
   - [Configuration](#configuration)
-  - [Helpful Tips](#helpful-tips)
+  - [Additional Commands and Helpful Tips](#additional-commands-and-helpful-tips)
 
 ## Pipeline Overview
 
@@ -144,6 +144,9 @@ SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
 ```
 
 **Step 2:** Paired-end FASTQ files in either `.fastq` or `.fastq.gz` format.
+
+> [!NOTE]
+> Before proceeding to Step 3, 4 and 5 it is recommended that the user installs KneadData, MetaPhlAn and HUMAnN in their system.
 
 **Step 3:** Provide a database for host sequence removal. This can be downloaded from the KneadData database by running the following command:
 
@@ -457,14 +460,16 @@ The MultiQC process aggregates quality control (QC) metrics and summary statisti
 - `multiqc_out/`: Directory containing the MultiQC report and associated data files.
 
 ## Configuration
+> [!WORK-IN-PROGRESS]
 
-## Helpful Tips
+## Additional Commands and Helpful Tips
 
 - Nextflow has the ability to cache task executions and re-use them in later runs so to minimize duplicate work. If encountered error or for any other reason, the user can resume the pipeline with the `-resume` flag.
 
-  ```bash
-  nextflow run main.nf -resume
-  ```
+```bash
+nextflow run main.nf -resume
+```
+
 - The pipeline will not automatically delete the work directory. The user may choose to either keep the directory and clean the cache by the following command:
 
 ```bash
@@ -476,3 +481,11 @@ or, permanently delete it by:
 rm -rf work
 ```
 For more information, please see [here](https://www.nextflow.io/docs/latest/reference/cli.html#clean).
+
+- The pipeline will automatically generate a directed-acyclic graph in HTML after every run along with HTML files of the pipeline report and the timeline. These can be modified or resetted in the `nextflow.config` file.
+
+- To view the pipline's help message
+
+```bash
+nextflow run main.nf --help
+```
