@@ -27,6 +27,8 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
     - [Consensus Pathway Analysis](#consensus-pathway-analysis)
     - [Run MultiQC](#run-multiqc)
   - [Configuration](#configuration)
+    - [Execution Profiles](#execution-profiles)
+    - [Environment Management](#environment-management)
   - [Additional Commands and Helpful Tips](#additional-commands-and-helpful-tips)
 
 ## Pipeline Overview
@@ -47,7 +49,7 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
 
 ### System Requirements
 
-The pipeline is currently capable of running on any UNIX-based system, such as Linux, macOS, etc. For running the pipeline locally, it is recommended to use a computer with at least 64GB of memory and a storage of *>=1 TB*. To run the pipeline on HPC or cloud systems such as AWS, there is no recommended specification.
+The pipeline is currently capable of running on any UNIX-based system, such as Linux, macOS, etc. For running the pipeline locally, it is recommended to use a computer with at least 32GB of memory and a storage of *~50 GB*. To run the pipeline on HPC or cloud systems such as AWS, there is no recommended specification.
 
 Since the pipeline is built using Nextflow, the user must install it. Nextflow installation can be found in the next sub-section. Additionally, the user must also ensure to install [Conda](https://docs.conda.io/en/latest/) when running locally and [Docker](https://www.docker.com) when running on other platforms.
 
@@ -147,10 +149,13 @@ SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
 
 > [!NOTE]
 > Before proceeding to Step 3, 4 and 5 it is recommended that the user installs KneadData, MetaPhlAn and HUMAnN in their system.
+> It is also recommended to install conda in the system from [here](https://docs.conda.io/en/latest/miniconda.html)
 
-**Step 3:** Provide a database for host sequence removal. This can be downloaded from the KneadData database by running the following command:
+**Step 3:** Provide a database for host sequence removal. This can be downloaded from the KneadData database by running the following commands:
 
 ```bash
+conda env create -f assets/kneaddata.yaml
+conda activate kneaddata
 kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
 ```
 
@@ -162,9 +167,11 @@ kneaddata_database --available
 
 Alternatively, the user can build/provide custom reference database. For more information, see the [KneadData documentation](https://github.com/biobakery/kneaddata)
 
-**Step 4:** Download the MetaPhlAn database by running the following command:
+**Step 4:** Download the MetaPhlAn database by running the following commands:
 
 ```bash
+conda env create -f assets/metaphlan.yaml
+conda activate metaphlan
 metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
 ```
 
@@ -174,9 +181,11 @@ The default index is set to `mpa_vJun23_CHOCOPhlAnSGB_202403`. Alternatively, th
 > Do not use the latest MetaPhlAn database, as it is incompatible with HUMAnN 3.9.
 > For further information, consult the [BioBakery forum](https://forum.biobakery.org).
 
-**Step 5:** Download both the HUMAnN nucleotide and protein databases using the following command:
+**Step 5:** Download both the HUMAnN nucleotide and protein databases using the following commands:
 
 ```bash
+conda env create -f assets/humann.yaml
+conda activate humann
 humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
 ```
 
@@ -460,7 +469,20 @@ The MultiQC process aggregates quality control (QC) metrics and summary statisti
 - `multiqc_out/`: Directory containing the MultiQC report and associated data files.
 
 ## Configuration
-> [!WORK-IN-PROGRESS]
+
+The *Pipeline* is designed for flexibility and reproducibility across a range of computing environments. Configuration is managed through the `nextflow.config` file, which defines execution profiles, resource settings, and environment management (Conda, Docker, Singularity/Apptainer). This file also declares the command line parameters used by the pipeline along with the default values.
+
+### Execution Profiles
+
+The pipeline supports multiple execution profiles, which can be combined as needed.
+
+- **local**: For running on a local workstation with Conda environments.
+- **cluster**: For running on HPC systems with SLURM, using Conda environments.
+- **containers**: For running with containerized environments (Docker, Singularity, or Apptainer).
+
+You can specify one or more profiles at runtime using the `-profile` flag. For example, to run on an HPC cluster with Singularity containers:
+
+### Environment Management
 
 ## Additional Commands and Helpful Tips
 

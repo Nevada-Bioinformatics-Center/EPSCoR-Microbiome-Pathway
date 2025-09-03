@@ -222,6 +222,7 @@ The pipeline generates the following output files:
     -  `_kneaddata.log` file containing the log of the KNEADING_DATA process for each samples.
     -  `/fastqc` directory containing FastQC reports for the processed FASTQ files in `.html` and the corresponding `.zip` files.
 
+> [!NOTE]
 > Please note that these have symbolic links to the nextflow working directory.
 
 2. **metaphlan_out**
