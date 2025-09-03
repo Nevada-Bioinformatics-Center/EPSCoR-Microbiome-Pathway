@@ -6,3 +6,5 @@ channels:
   - biobakery
 dependencies:
   - biobakery::humann=3.9
+  - jq
+  - yq

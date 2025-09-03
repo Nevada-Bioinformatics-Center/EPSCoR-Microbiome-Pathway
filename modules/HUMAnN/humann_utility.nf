@@ -1,9 +1,8 @@
 /*
- * Module: HUMAnN Utility tools
- * Description: This module performs HUMAnN analysis on metagenomic data.
+ * Module: HUMAnN Utility tools and Descriptive Profiling
+ * Description: This module performs downstream analysis on Pathway Abundance files from HUMAnN.
  * Version: v3.9
  * Author: Kanishka Manna
- * Date: 2025-04-28
  */
 
 
@@ -13,7 +12,7 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
 
     label 'humann_conda'
 
-    publishDir "${params.output}/humann_out/pathabundance", mode: 'copy'
+    publishDir "${params.output}/humann_out/pathabundance", mode: 'symlink'
 
     input:
         tuple val (sample_id), path(pathabundance)
@@ -24,7 +23,7 @@ process NORMALIZE_PATHWAY_ABUNDANCE {
     """
     humann_renorm_table --input ${pathabundance} \
     --output "${sample_id}_renorm_pathabundance.tsv" \
-    --units relab
+    --units ${params.humann_renorm_units}
     """
 }
 
@@ -53,22 +52,23 @@ process JOIN_PATHWAY_ABUNDANCE {
 
 
 // This process will generate descriptive statistics for the pathway abundance
-process DESC_PROFILING {
+process DESCRIPTIVE_PROFILING {
     tag "Descriptive Profiling"
 
     label 'desc_conda'
 
-    publishDir "${params.output}/humann_out/desc", mode: 'copy'
+    publishDir "${params.output}/desc_out", mode: 'move'
 
     input:
         path(joined_pathabundance)
+        path(samplesheet)
     
     output:
-        path("top_genus_out.tsv"), emit: top_genus
-        path("top_species_out.tsv"), emit: top_species
+        path("top_path_taxa_results.tsv"), emit: top_taxa
     
     script:
     """
-    desc_prof.R ${joined_pathabundance} top_genus_out.tsv top_species_out.tsv
+    desc_prof.R ${joined_pathabundance} top_path_taxa_results.tsv ${samplesheet}
     """
 }
+

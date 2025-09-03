@@ -2,37 +2,30 @@
  * Module: MetaPhlAn
  * Description: This module performs MetaPhlAn analysis on metagenomic data.
  * Version: v4.1.1
- * Author: Hans Vasquez-Gross
- * Date: 2025-04-11
+ * Author: Hans Vasquez-Gross & Kanishka Manna
  */
 
-process DOWNLOAD_METPHLAN_DB {
+process DOWNLOAD_METAPHLAN_DB {
     tag "metaphlan_db_download"
     
     label 'metaphlan_conda'
     label 'metaphlan_docker'
     label 'medium'
 
-    input:
-        val(install_dir)
-
+    publishDir "${params.database}", mode: 'symlink'
 
     output:
-        val(install_dir), emit: metaphlan_db_dir
+        val("${params.database}/metaphlan_db"), emit: metaphlan_db_dir
+
+    when:
+        ! file("${params.database}/metaphlan_db").exists()
 
     script:
     """
-    if [ ! -f ${install_dir}/.done ]; then
-        echo Downloading metaphlan database to ${install_dir}
-        mkdir -p ${install_dir}
-        export DEFAULT_DB_FOLDER=${install_dir}
+    db_dir="metaphlan_db"
 
-        metaphlan --install --index mpa_vJun23_CHOCOPhlAnSGB_202403 --db_dir ${install_dir} &> ${install_dir}/metaphlan_db.log
-        
-        touch ${install_dir}/.done
-    else
-        echo "Database already exists at ${install_dir}, skipping download."
-    fi
-    
+    mkdir -p \$db_dir
+
+    metaphlan --install --db_dir "\$db_dir" &> "\$db_dir/metaphlan_db.log"
     """
 }

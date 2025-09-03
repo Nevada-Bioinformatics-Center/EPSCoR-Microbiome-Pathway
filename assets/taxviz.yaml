@@ -1,0 +1,15 @@
+name: tax_viz
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+
+dependencies:
+  - r-base
+  - r-pacman
+  - r-dplyr
+  - r-ggplot2
+  - r-vegan
+  - bioconductor-mia
+  - bioconductor-phyloseq
+  - bioconductor-dirichletmultinomial

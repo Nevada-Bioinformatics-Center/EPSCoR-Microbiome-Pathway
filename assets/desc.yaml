@@ -3,8 +3,8 @@ channels:
   - conda-forge
   - bioconda
   - defaults
+
 dependencies:
   - r-base
-  - r-essentials
-  - r-dplyr
-  - bioconductor-mia
+  - r-tidyverse
+  - r-pacman
