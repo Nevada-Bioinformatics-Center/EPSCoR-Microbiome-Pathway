@@ -27,8 +27,10 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
     - [Consensus Pathway Analysis](#consensus-pathway-analysis)
     - [Run MultiQC](#run-multiqc)
   - [Configuration](#configuration)
-    - [Execution Profiles](#execution-profiles)
-    - [Environment Management](#environment-management)
+    - [Setting Execution Profiles and Engines](#setting-execution-profiles-and-engines)
+      - [1. Choose an Executor Profile](#1-choose-an-executor-profile)
+      - [2. Choose an Environment Engine](#2-choose-an-environment-engine)
+      - [3. Configuring SLURM for HPC](#3-configuring-slurm-for-hpc)
   - [Additional Commands and Helpful Tips](#additional-commands-and-helpful-tips)
 
 ## Pipeline Overview
@@ -472,17 +474,51 @@ The MultiQC process aggregates quality control (QC) metrics and summary statisti
 
 The *Pipeline* is designed for flexibility and reproducibility across a range of computing environments. Configuration is managed through the `nextflow.config` file, which defines execution profiles, resource settings, and environment management (Conda, Docker, Singularity/Apptainer). This file also declares the command line parameters used by the pipeline along with the default values.
 
-### Execution Profiles
+### Setting Execution Profiles and Engines
 
-The pipeline supports multiple execution profiles, which can be combined as needed.
+Before running the pipeline, the user must select an appropriate execution profile and environment engine to match their system and preferences.
 
-- **local**: For running on a local workstation with Conda environments.
-- **cluster**: For running on HPC systems with SLURM, using Conda environments.
-- **containers**: For running with containerized environments (Docker, Singularity, or Apptainer).
+> [!NOTE]
+> The user must select the profile i.e., the executor, the engine, and the engine toggle as per their preference by using the `-profile` flag when launching the pipeline.
 
-You can specify one or more profiles at runtime using the `-profile` flag. For example, to run on an HPC cluster with Singularity containers:
+> [!TIP]
+> This can be done using *','* to combine the options. 
+> For example: 
+> `-profile slurm,containers,singularity` (HPC with Singularity containers)
+> `-profile local,conda` (local with Conda)
 
-### Environment Management
+#### 1. Choose an Executor Profile
+
+The pipeline supports two executor profiles:
+
+- **local**: For running on local workstation/computer.
+- **slurm**: For running on a high-performance computing (HPC) cluster with SLURM.
+
+#### 2. Choose an Environment Engine
+
+The user must also specify how software dependencies are managed. There are two main options:
+
+- **conda**: Uses separate Conda environments for each process (recommended for local runs or as a backup when containers fail).
+- **containers**: Uses separate container images for reproducibility.
+
+When selecting `containers`, the user must choose a container engine toggle. There are three options:
+
+- **docker**: For Docker containers.
+- **singularity**: For Singularity containers (recommended for most HPCs).
+- **apptainer**: For Apptainer containers (alternative to Singularity).
+
+#### 3. Configuring SLURM for HPC
+
+If the user plans to run the pipeline on an HPC cluster using SLURM, they may wish to customize SLURM-specific settings.
+
+To do this:
+
+- Navigate to the `conf/` directory and open the `cluster.config` file.
+- In `cluster.config` please adjust:
+  - `account`: User-specified SLURM account name.
+  - `queueSize`: Maximum number of jobs submitted to SLURM at once.
+  - `queue`: The SLURM queue/partition to use.
+  - `clusterOptions`: Additional SLURM options (e.g., partition, account)
 
 ## Additional Commands and Helpful Tips
 
