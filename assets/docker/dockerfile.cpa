@@ -15,12 +15,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
-# Make remotes/devtools skip upgrades at runtime (your script keeps install_github)
+# Make remotes/devtools skip upgrades at runtime
 ENV R_REMOTES_UPGRADE=never
 # One CRAN mirror for all installs
 ENV CRAN_MIRROR=https://cloud.r-project.org
 
-# --- CRAN packages your scripts use (mirror set) ---
+# --- CRAN packages ---
 RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); install.packages(c( \
       "pacman","tidyverse","RCurl","data.table","stringr","R.utils", \
       "pbmcapply","stringdist","devtools","gridpattern","ggpattern", \
@@ -28,7 +28,7 @@ RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); install
     ))'
 
 # --- Bioconductor packages (no parallel, no upgrade) ---
-RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); if (!"BiocManager" %in% rownames(installed.packages())) install.packages("BiocManager"); BiocManager::install("fgsea",                ask=FALSE, update=FALSE)'
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); if (!"BiocManager" %in% rownames(installed.packages())) install.packages("BiocManager"); BiocManager::install("fgsea", ask=FALSE, update=FALSE)'
 RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("UniProt.ws",           ask=FALSE, update=FALSE)'
 RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("SummarizedExperiment", ask=FALSE, update=FALSE)'
 RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("limma",                ask=FALSE, update=FALSE)'
@@ -48,9 +48,10 @@ RUN R --vanilla -q -e ' \
   ok <- sapply(pkgs, require, character.only=TRUE); \
   if(!all(ok)) { print(ok); stop("Missing packages") }'
 
-# (Optional) bake scripts; otherwise mount at runtime
 COPY bin/goterms.R /usr/local/bin/goterms.R
 COPY bin/cpa.R      /usr/local/bin/cpa.R
-RUN chmod +x /usr/local/bin/goterms.R /usr/local/bin/cpa.R
+COPY bin/desc_prof.R /usr/local/bin/desc_prof.R
+
+RUN chmod +x /usr/local/bin/goterms.R /usr/local/bin/cpa.R /usr/local/bin/desc_prof.R
 
 ENV RENV_CONFIG_CACHE_ENABLED=FALSE

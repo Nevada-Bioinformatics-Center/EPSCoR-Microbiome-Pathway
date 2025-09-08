@@ -43,6 +43,6 @@ process TAXONOMIC_VISUALIZATION {
 
     script:
     """
-    taxa_viz.r ${merged_taxa_profile} ${samplesheet_file}
+    ${task.ext.script_path} ${merged_taxa_profile} ${samplesheet_file}
     """
 }
