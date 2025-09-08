@@ -55,7 +55,7 @@ def gate(ch, token) {
 
 // 3) Warmup process: pulls each image once (on submit node)
 process CONTAINER_WARMUP {
-  label 'bootstrap'  // config: executor=local, container=null, conda=null, maxForks=1
+  label 'bootstrap'   
   publishDir false
 
   input:
@@ -68,42 +68,67 @@ process CONTAINER_WARMUP {
   """
   set -euo pipefail
 
-  # Where the final .sif files will live (Nextflow also uses this path)
-  CACHE="\${NXF_SINGULARITY_CACHEDIR:-\$HOME/.cache/nextflow/singularity}"
-  mkdir -p "\$CACHE"
-  cd "\$CACHE"
+  # Detect container engine on the host
+  if command -v singularity >/dev/null 2>&1; then
+    ENGINE=singularity
+  elif command -v apptainer >/dev/null 2>&1; then
+    ENGINE=apptainer
+  elif command -v docker >/dev/null 2>&1; then
+    ENGINE=docker
+  else
+    echo "[warmup] no container engine found on host; skipping warmup for: $image"
+    exit 0
+  fi
 
-  # Ensure Singularity's own caches/tmp are on a large, writable filesystem
-  export SINGULARITY_CACHEDIR="\${SINGULARITY_CACHEDIR:-\$CACHE/_blobcache}"
-  export SINGULARITY_TMPDIR="\${SINGULARITY_TMPDIR:-\${TMPDIR:-\$CACHE/_tmp}}"
-  export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-\${TMPDIR:-/tmp}/xdg-\$USER}"
-  mkdir -p "\$SINGULARITY_CACHEDIR" "\$SINGULARITY_TMPDIR" "\$XDG_RUNTIME_DIR"
+  if [[ "\$ENGINE" = "docker" ]]; then
+    # ----- Docker warmup: pre-pull/tag present images -----
+    tries=5; delay=10
+    for attempt in \$(seq 1 \$tries); do
+      if docker image inspect "$image" >/dev/null 2>&1; then
+        echo "[warmup] docker: image already present -> $image"
+        break
+      fi
+      echo "[warmup] (\$attempt/\$tries) docker pull $image"
+      if docker pull "$image"; then
+        break
+      fi
+      echo "[warmup] docker pull failed; sleeping \$delay s..."
+      sleep "\$delay"; delay=\$((delay*2))
+    done
+    docker image inspect "$image" >/dev/null 2>&1 || { echo "[warmup] ERROR: docker image not present: $image"; exit 2; }
+  else
+    # ----- Singularity/Apptainer warmup: pre-build .img in a shared cache -----
+    CACHE="\${NXF_SINGULARITY_CACHEDIR:-\$HOME/.cache/nextflow/singularity}"
+    mkdir -p "\$CACHE"
+    cd "\$CACHE"
 
-  name=\$(echo "$image" | tr '/:@' '---').img
+    export SINGULARITY_CACHEDIR="\${SINGULARITY_CACHEDIR:-\$CACHE/_blobcache}"
+    export SINGULARITY_TMPDIR="\${SINGULARITY_TMPDIR:-\${TMPDIR:-\$CACHE/_tmp}}"
+    export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-\${TMPDIR:-/tmp}/xdg-\$USER}"
+    mkdir -p "\$SINGULARITY_CACHEDIR" "\$SINGULARITY_TMPDIR" "\$XDG_RUNTIME_DIR"
 
-  # Pull with retries/backoff to ride out transient network resets
-  tries=5
-  delay=10
-  for attempt in \$(seq 1 \$tries); do
-    if [[ -f "\$name" ]]; then
-      echo "[warmup] found \$name"
-      break
-    fi
-    echo "[warmup] (\$attempt/\$tries) pulling $image -> \$name"
-    if singularity pull --name "\$name" "docker://$image"; then
-      break
-    fi
-    echo "[warmup] pull failed; sleeping \$delay s before retry..."
-    sleep "\$delay"
-    delay=\$(( delay * 2 ))
-  done
+    name=\$(echo "$image" | tr '/:@' '---').img
 
-  # Final check
-  [[ -f "\$name" ]] || { echo "[warmup] ERROR: failed to obtain \$name after retries"; exit 2; }
+    tries=5; delay=10
+    for attempt in \$(seq 1 \$tries); do
+      if [[ -f "\$name" ]]; then
+        echo "[warmup] found \$name"
+        break
+      fi
+      echo "[warmup] (\$attempt/\$tries) \$ENGINE pull docker://$image -> \$name"
+      if "\$ENGINE" pull --name "\$name" "docker://$image"; then
+        break
+      fi
+      echo "[warmup] pull failed; sleeping \$delay s..."
+      sleep "\$delay"; delay=\$((delay*2))
+    done
+    [[ -f "\$name" ]] || { echo "[warmup] ERROR: failed to obtain \$name after retries"; exit 2; }
+  fi
 
-  echo "[warmup] ready: \$name"
+  echo "[warmup] ready via \$ENGINE: $image"
   """
 }
+
 
 
 
