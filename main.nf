@@ -368,34 +368,38 @@ workflow  {
         Step 4: CPA analysis
         ----------------------------
     */
+    def use_ext_goterms = (params.goterm_db && file("${params.goterm_db}/GOTerms.rds").exists())
 
-    // Generate GO terms from pathway data
-    GENERATE_GOTERMS()
+    def goterms_ch
+    if( use_ext_goterms ) {
+      // external file exists — use it
+      goterms_ch = nextflow.Channel.fromPath("${params.goterm_db}/GOTerms.rds", checkIfExists: true)
+      log.info "Using external GOTerms: ${params.goterm_db}/GOTerms.rds"
+    } else {
+      GENERATE_GOTERMS()   // make sure this process has `output: path "GOTerms.rds", emit: goterms`
+      goterms_ch = GENERATE_GOTERMS.out.goterms
+      log.info "Using generated GOTerms from GENERATE_GOTERMS"
+    }
 
-    // Channel for existing GO terms
-    ext_goterms = Channel.fromPath("${params.goterm_db}/GOTerms.rds")
-
-    // Merge the generated GO terms with existing ones
-    goterms_ch = GENERATE_GOTERMS.out.goterms.mix(ext_goterms).first()
-
-
+    // (Optional) sanity: assert it really is a file path and log it once
+    goterms_ch
+      .map { f -> assert file(f).exists() : "Selected GOTerms missing: ${f}"; f }
+      .view { "GOTERMS -> $it" }
+      .set { goterms_ready_ch }
 
     // Collect HUMAnN gene family output files into a directory for CPA input
     FUNCTIONAL_PROFILING.out.gene_fam
     .collect()
+    .ifEmpty { assert false : "No HUMAnN gene family files produced" }
     .map { files ->
         def outdir = file("humann_genefam_dir")
         outdir.mkdirs()
-        files.each { f -> 
-            def dst = outdir.resolve(f.getName())
-            f.copyTo(dst)
-        }
+        files.each { f -> f.copyTo(outdir.resolve(f.getName())) }
         return outdir
     }
+    .view { "Directory prepared for CPA: $it" }
     .set { humann_genefam_ch }
     
-    humann_genefam_ch.view { "Directory prepared for CPA: $it" }
-
     // Extract sample metadata information from the samplesheet
     Channel.fromPath(params.samplesheet, checkIfExists: true)
             .set { samplesheet_file_ch }

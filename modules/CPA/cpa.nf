@@ -12,7 +12,7 @@ process GENERATE_GOTERMS {
     label 'go_term'
     label 'medium'
 
-    publishDir "${params.goterm_db}", mode: 'symlink'
+    publishDir "${params.goterm_db}", mode: 'link', overwrite: true
 
     output:
         path ("GOTerms.rds"), emit: goterms
@@ -22,11 +22,7 @@ process GENERATE_GOTERMS {
         path (".done")
     
     when:
-        ! file("${params.goterm_db}/GOTerms.rds").exists() || 
-        ! file("${params.goterm_db}/gene2go.gz").exists() || 
-        ! file("${params.goterm_db}/All_Data.gene_info.gz").exists() || 
-        ! file("${params.goterm_db}/go.obo").exists() ||
-        ! file("${params.goterm_db}/.done").exists()
+        ! file("${params.goterm_db}/GOTerms.rds").exists()
     
     script:
     """
