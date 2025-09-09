@@ -39,7 +39,8 @@ include { DESCRIPTIVE_PROFILING } from './modules/HUMAnN/humann_utility.nf'
 include { GENERATE_GOTERMS } from './modules/CPA/cpa.nf'
 include { EXTRACT_METAINFO } from './modules/CPA/cpa.nf'
 include { CONSENSUS_PATHWAY_ANALYSIS } from './modules/CPA/cpa.nf'
-include { RUN_MULTIQC } from './modules/MultiQC/multiqc.nf'
+include { RUN_MULTIQC_PROCESSED } from './modules/MultiQC/multiqc.nf'
+include { RUN_MULTIQC_RAW } from './modules/MultiQC/multiqc.nf'
 
 
 
@@ -360,13 +361,39 @@ workflow  {
         ----------------------------
     */
 
+    // Collect sample IDs as a list
+    def sample_ids = []
+    Channel.fromPath(params.samplesheet)
+        .splitCsv(header: true)
+        .map { row -> row.sample }
+        .unique()
+        .collect()
+        .subscribe { ids -> sample_ids = ids }
+
+    // Collect raw basenames as a list
+    def raw_basenames = []
+    Channel.fromPath(params.samplesheet)
+        .splitCsv(header: true)
+        .map { row -> [ row.fastq_1, row.fastq_2 ] }
+        .flatten()
+        .filter { it }
+        .map { file -> file.split('/')[-1].replaceAll(/\.f(ast)?q(\.gz)?$/, '') }
+        .unique()
+        .collect()
+        .subscribe { bases -> raw_basenames = bases }
+
+    all_fastqc_zip  = KNEADING_DATA.out.kneaddata_fastqc_zip.flatten()
+
+    raw_fastqc_zip  = all_fastqc_zip.filter  { file -> raw_basenames.any { base -> file.getBaseName().startsWith(base) } }
+
+    processed_fastqc_zip  = all_fastqc_zip.filter  { file -> sample_ids.any { id -> file.getBaseName().startsWith(id) } }
+
     // Run multiqc
-    RUN_MULTIQC(
-        KNEADING_DATA.out.kneaddata_fastqc_html.mix(
-            KNEADING_DATA.out.kneaddata_fastqc_zip,
-            TAXONOMIC_PROFILING.out.profiled_taxa_txt
-        ).collect()
-    )
+    processed_fastqc_zip.collect().set { processed_fastqc_files }
+    RUN_MULTIQC_PROCESSED(processed_fastqc_files)
+
+    raw_fastqc_zip.collect().set { raw_fastqc_files }
+    RUN_MULTIQC_RAW(raw_fastqc_files)
 }
 
 

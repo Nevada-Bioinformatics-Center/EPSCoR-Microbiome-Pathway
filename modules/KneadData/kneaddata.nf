@@ -19,8 +19,8 @@ process KNEADING_DATA {
     output:
         path( "${sample_id}.fastq.gz" ), emit: kneaddata_fastq
         path( "*.log" ), emit: kneaddata_log
-        path( "fastqc/${sample_id}*.html" ), emit: kneaddata_fastqc_html
-        path( "fastqc/${sample_id}*.zip" ), emit: kneaddata_fastqc_zip
+        path( "fastqc/*_fastqc.html" ), emit: kneaddata_fastqc_html
+        path( "fastqc/*_fastqc.zip" ), emit: kneaddata_fastqc_zip
 
     script:
         """

@@ -5,21 +5,44 @@
  * Author: Kanishka Manna
  */
 
-process RUN_MULTIQC {
+process RUN_MULTIQC_PROCESSED {
 
     tag "MultiQC"
 
     label 'multiqc_conda'
     label 'multiqc_docker'
 
-    publishDir "${params.output}/multiqc_out", mode: 'copy'
+    publishDir "${params.output}/multiqc_out/processed", mode: 'copy'
 
     input:
-        path '*'
+        path processed_fastqc
 
     output:
-        path "multiqc_report.html", emit: multiqc_report
-        path "multiqc_data"       , emit: multiqc_data
+        path "multiqc_report.html", emit: multiqc_processed_report
+        path "multiqc_data"
+
+    script:
+    """
+    multiqc . --outdir ./ --force
+    """
+}
+
+
+process RUN_MULTIQC_RAW {
+
+    tag "MultiQC"
+
+    label 'multiqc_conda'
+    label 'multiqc_docker'
+
+    publishDir "${params.output}/multiqc_out/raw", mode: 'copy'
+
+    input:
+        path raw_fastqc
+
+    output:
+        path "multiqc_report.html", emit: multiqc_raw_report
+        path "multiqc_data"
 
     script:
     """
