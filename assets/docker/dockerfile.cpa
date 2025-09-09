@@ -1,20 +1,57 @@
-FROM rocker/r-base
+FROM bioconductor/bioconductor_docker:RELEASE_3_20
 
-# Install system dependencies for R packages
-RUN apt-get update && apt-get install -y \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxml2-dev \
+# System libs for packages that compile (sf/units/devtools/etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential git ca-certificates \
+    libcurl4-openssl-dev libssl-dev libxml2-dev \
+    libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev \
+    libpng-dev libtiff5-dev libjpeg-dev \
     libgit2-dev \
-    && rm -rf /var/lib/apt/lists/*
+    libudunits2-dev libgdal-dev libgeos-dev libproj-dev gdal-bin proj-bin proj-data \
+    locales && \
+    rm -rf /var/lib/apt/lists/*
 
-# Install R packages from CRAN and Bioconductor
-RUN Rscript -e "install.packages(c('data.table', 'R.utils', 'pacman', 'RCurl', 'stringr', 'tidyverse', 'fgsea', 'pbmcapply', 'devtools', 'BiocManager', 'stringdist', 'gridpattern', 'ggpattern', 'units', 'sf'), repos='https://cloud.r-project.org/')"
-RUN Rscript -e "BiocManager::install(c('UniProt.ws', 'SummarizedExperiment'))"
+# Locale
+RUN sed -i 's/# en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen && locale-gen
+ENV LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
 
-# Copy your R script into the image and make it executable
-COPY bin/cpa.R /usr/local/bin/cpa.R
-RUN chmod +x /usr/local/bin/cpa.R
+# Make remotes/devtools skip upgrades at runtime
+ENV R_REMOTES_UPGRADE=never
+# One CRAN mirror for all installs
+ENV CRAN_MIRROR=https://cloud.r-project.org
 
-# Set the default command to bash (so Nextflow can run ./cpa.R ...)
-CMD ["bash"]
+# --- CRAN packages ---
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); install.packages(c( \
+      "pacman","tidyverse","RCurl","data.table","stringr","R.utils", \
+      "pbmcapply","stringdist","devtools","gridpattern","ggpattern", \
+      "units","sf","igraph","ggraph","RColorBrewer","ggplot2","remotes" \
+    ))'
+
+# --- Bioconductor packages (no parallel, no upgrade) ---
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); if (!"BiocManager" %in% rownames(installed.packages())) install.packages("BiocManager"); BiocManager::install("fgsea", ask=FALSE, update=FALSE)'
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("UniProt.ws",           ask=FALSE, update=FALSE)'
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("SummarizedExperiment", ask=FALSE, update=FALSE)'
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); BiocManager::install("limma",                ask=FALSE, update=FALSE)'
+
+# Preinstall RCPA from GitHub WITH dependencies; skip vignettes to keep build small
+RUN R --vanilla -q -e 'options(repos=c(CRAN=Sys.getenv("CRAN_MIRROR"))); \
+  if (!requireNamespace("remotes", quietly=TRUE)) install.packages("remotes"); \
+  if (!requireNamespace("BiocManager", quietly=TRUE)) install.packages("BiocManager"); \
+  remotes::install_github("tinnlab/RCPA", upgrade="never", dependencies=TRUE, build_vignettes=FALSE)'
+
+# Sanity check
+RUN R --vanilla -q -e ' \
+  pkgs <- c("pacman","tidyverse","RCurl","data.table","stringr","R.utils", \
+            "fgsea","pbmcapply","stringdist","devtools","UniProt.ws", \
+            "SummarizedExperiment","limma","gridpattern","ggpattern", \
+            "units","sf","igraph","ggraph","RColorBrewer","ggplot2","RCPA"); \
+  ok <- sapply(pkgs, require, character.only=TRUE); \
+  if(!all(ok)) { print(ok); stop("Missing packages") }'
+
+COPY bin/goterms.R /usr/local/bin/goterms.R
+COPY bin/cpa.R      /usr/local/bin/cpa.R
+COPY bin/desc_prof.R /usr/local/bin/desc_prof.R
+
+RUN chmod +x /usr/local/bin/goterms.R /usr/local/bin/cpa.R /usr/local/bin/desc_prof.R
+
+ENV RENV_CONFIG_CACHE_ENABLED=FALSE

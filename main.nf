@@ -42,6 +42,92 @@ include { CONSENSUS_PATHWAY_ANALYSIS } from './modules/CPA/cpa.nf'
 include { RUN_MULTIQC_PROCESSED } from './modules/MultiQC/multiqc.nf'
 include { RUN_MULTIQC_RAW } from './modules/MultiQC/multiqc.nf'
 
+// ---------- One-time Singularity container warmup (runs on submit node) ----------
+
+// Build a list of image URLs from your params.containers map
+Channel.fromList( params.containers.values().toList() )
+       .set { CONTAINER_URLS }
+
+// A tiny gating helper – blocks any channel until a token is emitted
+def gate(ch, token) {
+  token.combine(ch).map { _, x -> x }
+}
+
+// 3) Warmup process: pulls each image once (on submit node)
+process CONTAINER_WARMUP {
+  label 'bootstrap'   
+  publishDir false
+
+  input:
+  val image
+
+  output:
+  val(image), emit: done
+
+  script:
+  """
+  set -euo pipefail
+
+  # Detect container engine on the host
+  if command -v singularity >/dev/null 2>&1; then
+    ENGINE=singularity
+  elif command -v apptainer >/dev/null 2>&1; then
+    ENGINE=apptainer
+  elif command -v docker >/dev/null 2>&1; then
+    ENGINE=docker
+  else
+    echo "[warmup] no container engine found on host; skipping warmup for: $image"
+    exit 0
+  fi
+
+  if [[ "\$ENGINE" = "docker" ]]; then
+    # ----- Docker warmup: pre-pull/tag present images -----
+    tries=5; delay=10
+    for attempt in \$(seq 1 \$tries); do
+      if docker image inspect "$image" >/dev/null 2>&1; then
+        echo "[warmup] docker: image already present -> $image"
+        break
+      fi
+      echo "[warmup] (\$attempt/\$tries) docker pull $image"
+      if docker pull "$image"; then
+        break
+      fi
+      echo "[warmup] docker pull failed; sleeping \$delay s..."
+      sleep "\$delay"; delay=\$((delay*2))
+    done
+    docker image inspect "$image" >/dev/null 2>&1 || { echo "[warmup] ERROR: docker image not present: $image"; exit 2; }
+  else
+    # ----- Singularity/Apptainer warmup: pre-build .img in a shared cache -----
+    CACHE="\${NXF_SINGULARITY_CACHEDIR:-\$HOME/.cache/nextflow/singularity}"
+    mkdir -p "\$CACHE"
+    cd "\$CACHE"
+
+    export SINGULARITY_CACHEDIR="\${SINGULARITY_CACHEDIR:-\$CACHE/_blobcache}"
+    export SINGULARITY_TMPDIR="\${SINGULARITY_TMPDIR:-\${TMPDIR:-\$CACHE/_tmp}}"
+    export XDG_RUNTIME_DIR="\${XDG_RUNTIME_DIR:-\${TMPDIR:-/tmp}/xdg-\$USER}"
+    mkdir -p "\$SINGULARITY_CACHEDIR" "\$SINGULARITY_TMPDIR" "\$XDG_RUNTIME_DIR"
+
+    name=\$(echo "$image" | tr '/:@' '---').img
+
+    tries=5; delay=10
+    for attempt in \$(seq 1 \$tries); do
+      if [[ -f "\$name" ]]; then
+        echo "[warmup] found \$name"
+        break
+      fi
+      echo "[warmup] (\$attempt/\$tries) \$ENGINE pull docker://$image -> \$name"
+      if "\$ENGINE" pull --name "\$name" "docker://$image"; then
+        break
+      fi
+      echo "[warmup] pull failed; sleeping \$delay s..."
+      sleep "\$delay"; delay=\$((delay*2))
+    done
+    [[ -f "\$name" ]] || { echo "[warmup] ERROR: failed to obtain \$name after retries"; exit 2; }
+  fi
+
+  echo "[warmup] ready via \$ENGINE: $image"
+  """
+}
 
 
 
@@ -139,9 +225,20 @@ workflow  {
         .map { sample_id, _factors, read, dbs -> tuple(sample_id, read, dbs) }
         .set { kneaddata_inputs }
 
+
+    // >>> Call the warmup here (runs once on submit node)
+    CONTAINER_WARMUP(CONTAINER_URLS)
+
+    // Grab its token channel
+    def WARMUP_TOKEN = CONTAINER_WARMUP.out.done.collect().map { true }  // one value after all pulls
     
-    // Run KneadData
-    KNEADING_DATA(kneaddata_inputs)
+    // Keep original tuple, drop token (last element)
+    kneaddata_inputs_gated = kneaddata_inputs
+      .combine(WARMUP_TOKEN)
+      .map { sample_id, reads, db, _ -> tuple(sample_id, reads, db) }
+    
+    // Run KneadData (safe to start now)
+    KNEADING_DATA(kneaddata_inputs_gated)
 
 
 
@@ -271,34 +368,38 @@ workflow  {
         Step 4: CPA analysis
         ----------------------------
     */
+    def use_ext_goterms = (params.goterm_db && file("${params.goterm_db}/GOTerms.rds").exists())
 
-    // Generate GO terms from pathway data
-    GENERATE_GOTERMS()
+    def goterms_ch
+    if( use_ext_goterms ) {
+      // external file exists — use it
+      goterms_ch = nextflow.Channel.fromPath("${params.goterm_db}/GOTerms.rds", checkIfExists: true)
+      log.info "Using external GOTerms: ${params.goterm_db}/GOTerms.rds"
+    } else {
+      GENERATE_GOTERMS()   // make sure this process has `output: path "GOTerms.rds", emit: goterms`
+      goterms_ch = GENERATE_GOTERMS.out.goterms
+      log.info "Using generated GOTerms from GENERATE_GOTERMS"
+    }
 
-    // Channel for existing GO terms
-    ext_goterms = Channel.fromPath("${params.goterm_db}/GOTerms.rds")
-
-    // Merge the generated GO terms with existing ones
-    goterms_ch = GENERATE_GOTERMS.out.goterms.mix(ext_goterms).first()
-
-
+    // (Optional) sanity: assert it really is a file path and log it once
+    goterms_ch
+      .map { f -> assert file(f).exists() : "Selected GOTerms missing: ${f}"; f }
+      .view { "GOTERMS -> $it" }
+      .set { goterms_ready_ch }
 
     // Collect HUMAnN gene family output files into a directory for CPA input
     FUNCTIONAL_PROFILING.out.gene_fam
     .collect()
+    .ifEmpty { assert false : "No HUMAnN gene family files produced" }
     .map { files ->
         def outdir = file("humann_genefam_dir")
         outdir.mkdirs()
-        files.each { f -> 
-            def dst = outdir.resolve(f.getName())
-            f.copyTo(dst)
-        }
+        files.each { f -> f.copyTo(outdir.resolve(f.getName())) }
         return outdir
     }
+    .view { "Directory prepared for CPA: $it" }
     .set { humann_genefam_ch }
     
-    humann_genefam_ch.view { "Directory prepared for CPA: $it" }
-
     // Extract sample metadata information from the samplesheet
     Channel.fromPath(params.samplesheet, checkIfExists: true)
             .set { samplesheet_file_ch }

@@ -9,10 +9,10 @@
 process GENERATE_GOTERMS {
     tag "Gene Ontology Terms"
 
-    label 'go_term_conda'
+    label 'go_term'
     label 'medium'
 
-    publishDir "${params.goterm_db}", mode: 'symlink'
+    publishDir "${params.goterm_db}", mode: 'link', overwrite: true
 
     output:
         path ("GOTerms.rds"), emit: goterms
@@ -22,27 +22,22 @@ process GENERATE_GOTERMS {
         path (".done")
     
     when:
-        ! file("${params.goterm_db}/GOTerms.rds").exists() || 
-        ! file("${params.goterm_db}/gene2go.gz").exists() || 
-        ! file("${params.goterm_db}/All_Data.gene_info.gz").exists() || 
-        ! file("${params.goterm_db}/go.obo").exists() ||
-        ! file("${params.goterm_db}/.done").exists()
+        ! file("${params.goterm_db}/GOTerms.rds").exists()
     
     script:
     """
-    db_dir="."
+    echo "Downloading and generating GO term resources..."
     
-    if [ ! -f "\$db_dir/.done" ]; then
-        echo "Downloading and generating GO term resources in \$db_dir"
-        [ -f gene2go.gz ] || wget -O gene2go.gz https://ftp.ncbi.nih.gov/gene/DATA/gene2go.gz
-        [ -f All_Data.gene_info.gz ] || wget -O All_Data.gene_info.gz https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz
-        [ -f go.obo ] || wget -O go.obo http://purl.obolibrary.org/obo/go.obo
+    # Download required files
+    wget -O gene2go.gz https://ftp.ncbi.nih.gov/gene/DATA/gene2go.gz
+    wget -O All_Data.gene_info.gz https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/All_Data.gene_info.gz
+    wget -O go.obo http://purl.obolibrary.org/obo/go.obo
 
-        goterms.R GOTerms.rds gene2go.gz All_Data.gene_info.gz go.obo
-        touch .done
-    else
-        echo "GOTerms.rds already exists in \$db_dir, skipping download and generation."
-    fi
+    # Run the script using the dynamic path
+    ${task.ext.script_path} GOTerms.rds gene2go.gz All_Data.gene_info.gz go.obo
+
+    # Create the done file to signal completion
+    touch .done
     """
 }
 
@@ -52,7 +47,7 @@ process GENERATE_GOTERMS {
 process EXTRACT_METAINFO {
     tag "Extract Meta information"
 
-    label 'cpa_conda'
+    label 'cpa'
     label 'low'
 
     input:
@@ -73,7 +68,7 @@ process EXTRACT_METAINFO {
 process CONSENSUS_PATHWAY_ANALYSIS {
     tag "Consensus Pathway Analysis"
 
-    label 'cpa_conda'
+    label 'cpa'
     label 'high'
     
     publishDir "${params.output}", mode: 'move'
@@ -89,6 +84,6 @@ process CONSENSUS_PATHWAY_ANALYSIS {
     
     script:
     """
-    cpa.R ${samplesheet} ${humann_dir} ${goterms}
+    ${task.ext.script_path} ${samplesheet} ${humann_dir} ${goterms}
     """
 }

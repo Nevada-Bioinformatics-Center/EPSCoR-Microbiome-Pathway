@@ -8,8 +8,7 @@
 process DOWNLOAD_METAPHLAN_DB {
     tag "metaphlan_db_download"
     
-    label 'metaphlan_conda'
-    label 'metaphlan_docker'
+    label 'metaphlan'
     label 'medium'
 
     publishDir "${params.database}", mode: 'symlink'

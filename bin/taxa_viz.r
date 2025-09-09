@@ -33,11 +33,11 @@ if ("exp_conditions" %in% colnames(metaData) && length(unique(metaData$exp_condi
 # ---------- Load merged Metaphlan file ---------- #
 # NOTE: Use merge_metaphlan_tables.py to generate merged_taxa_file before running this script
 # Example: python merge_metaphlan_tables.py *_profile.tsv > merged_abundance_table.tsv
-tse <- importMetaPhlAn(merged_taxa_file)
+tse <- mia::importMetaPhlAn(merged_taxa_file)
 
 # 'assasy.type' is set to default - "counts"
 # To find assay.type, run assayName(tse) in the console
-phylo <- convertToPhyloseq(tse, assay.type = 'metaphlan')
+phylo <- mia::convertToPhyloseq(tse, assay.type = "counts")
 
 # Add metadata to phyloseq object
 sample_data(phylo) <- metaData
@@ -130,8 +130,8 @@ ggsave(top10plot, file = file.path(exportDir, "scaled_abundances_top10.png"), he
 # Remove samples with all-zero or NA abundance
 phylo <- prune_samples(sample_sums(phylo) > 0, phylo)
 ord.nmds.bray <- ordinate(phylo, method="NMDS", distance="bray")
-#ordination_plot <- plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS")
-#ggsave(ordination_plot, file = file.path(exportDir, "Bray_NMDS_sample.png"), height = 6, width = 8, units = "in")
+ordination_plot <- plot_ordination(phylo, ord.nmds.bray, color="sample", title="Bray NMDS")
+ggsave(ordination_plot, file = file.path(exportDir, "Bray_NMDS_sample.png"), height = 6, width = 8, units = "in")
 
 nmds_df <- plot_ordination(phylo, ord.nmds.bray, justDF = TRUE)
 
