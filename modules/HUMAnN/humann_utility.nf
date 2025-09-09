@@ -61,13 +61,14 @@ process DESCRIPTIVE_PROFILING {
 
     input:
         path(joined_pathabundance)
+        path(samplesheet)
     
     output:
         path("top_path_taxa_results.tsv"), emit: top_taxa
     
     script:
     """
-    ${task.ext.script_path} ${joined_pathabundance} top_path_taxa_results.tsv
+    ${task.ext.script_path} ${joined_pathabundance} top_path_taxa_results.tsv ${samplesheet}
     """
 }
 
