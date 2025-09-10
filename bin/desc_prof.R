@@ -30,7 +30,7 @@ samplesheet <- args[6]
 # samplesheet <- "seedfile.csv"
 
 # ---------- Libraries ----------
-options(repos = c(CRAN = "https://cloudgenus_statistics.tsv.r-project.org"))
+options(repos = c(CRAN = "https://cloud.r-project.org"))
 suppressPackageStartupMessages({
   library(pacman)
 })
@@ -251,7 +251,27 @@ genus_pathway_summary <- genus_tbl_grouped %>%
 
 
 # ---------- Write ----------
-write.table(path_tbl, output_file1, sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(sample_info, output_file2, sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(genus_tbl, output_file3, sep = "\t", row.names = FALSE, quote = FALSE)
-write.table(genus_pathway_summary, output_file4, sep = "\t", row.names = FALSE, quote = FALSE)
+if (nrow(path_tbl) == 0L) {
+  message("desc_prof: no pathways found; writing message file")
+  writeLines("No pathways found", con = output_file1)
+} else {
+  write.table(path_tbl, output_file1, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+if (nrow(sample_info) == 0L) {
+  message("desc_prof: no sample info found; writing message file")
+  writeLines("No sample info found", con = output_file2)
+} else {
+  write.table(sample_info, output_file2, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+if (nrow(genus_tbl) == 0L) {
+  message("desc_prof: no genus info found; writing message file")
+  writeLines("No genus info found", con = output_file3)
+} else {
+  write.table(genus_tbl, output_file3, sep = "\t", row.names = FALSE, quote = FALSE)
+}
+if (nrow(genus_pathway_summary) == 0L) {
+  message("desc_prof: no genus pathways found; writing message file")
+  writeLines("No genus pathways found", con = output_file4)
+} else {
+  write.table(genus_pathway_summary, output_file4, sep = "\t", row.names = FALSE, quote = FALSE)
+}
