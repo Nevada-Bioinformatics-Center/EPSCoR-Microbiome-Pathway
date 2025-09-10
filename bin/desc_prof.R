@@ -1,23 +1,36 @@
 #!/usr/bin/env Rscript
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 #   Descriptive profiling                                    #
-#   Authors: Kanishka Manna & Hans Vasquez-Gross             #
+#   Authors: Kanishka Manna, Hans Vasquez-Gross &            #
+#            Cassandra K. Hui                                #
 #   Updated: fix list-column bug; use per-sample MAX metric  #
 #   Updated: Added exp conditions, sample columns; fix       #
 #            abundance values from unclassified and          #
 #            classified taxa                                 #
 
 args <- commandArgs(trailingOnly = TRUE)
-if (length(args) < 3) {
-  stop("Usage: Rscript desc_prof.R <joined_pathabundance.tsv> <output.tsv> <samplesheet.csv>")
+if (length(args) < 6) {
+  stop("Usage: Rscript desc_prof.R <joined_pathabundance.tsv> <output1.tsv> <output2.tsv> <output3.tsv> <output4.tsv> <samplesheet.csv>")
 }
 
 input_file  <- args[1]
-output_file <- args[2]
-samplesheet <- args[3]
+output_file1 <- args[2]
+output_file2 <- args[3]
+output_file3 <- args[4]
+output_file4 <- args[5]
+samplesheet <- args[6]
+
+
+# input_file <- "joined_norm_pathabundance.tsv"
+# output_file1 <- "pathways.tsv"
+# output_file2 <- "sample_statistics.tsv"
+# output_file3 <- "pathways_by_genus.tsv"
+# output_file4 <- "genus_statistics.tsv"
+# 
+# samplesheet <- "seedfile.csv"
 
 # ---------- Libraries ----------
-options(repos = c(CRAN = "https://cloud.r-project.org"))
+options(repos = c(CRAN = "https://cloudgenus_statistics.tsv.r-project.org"))
 suppressPackageStartupMessages({
   library(pacman)
 })
@@ -41,60 +54,204 @@ df <- data.table::fread(
 # Normalize the first header (some HUMAnN files start with "#")
 colnames(df)[1] <- sub("^#\\s*", "", colnames(df)[1])
 
+
+##############################
+# Separate the two dataframes
+##############################
+
+# Extract total (unstratified) pathways
+df_total_pathways <- df %>% filter(!grepl("\\|", .[[1]]))
+
+# Extract stratified (taxa-associated) pathways
+df_stratified <- df %>% filter(grepl("\\|", .[[1]]))
+
 # ---------- Parse taxonomy + pathway ----------
-df <- df %>%
+
+df_stratified <- df_stratified %>%
   mutate(
     taxonomy = ifelse(grepl("\\|", .[[1]]), sub("^[^|]*\\|", "", .[[1]]), NA),
-    genus    = ifelse(!is.na(taxonomy) & grepl("g__", taxonomy),
-                      sub("(g__[^| ]+).*", "\\1", taxonomy), "unclassified"),
+    # genus    = grepl("g__", taxonomy),
+    #                   sub("(g__[^| ]+).*", "\\1", taxonomy),
+    genus    = sub("\\.s__.*", "", taxonomy),  # <-- This removes the species/strain part
     Pathway  = ifelse(grepl("\\|", .[[1]]), sub("\\|.*", "", .[[1]]), .[[1]])
   ) %>%
   mutate(
     Pathway = as.character(Pathway),
+    taxonomy = as.character(taxonomy),
     genus   = as.character(genus)
   )
 
-# ---------- Identify sample columns & coerce to numeric ----------
-annot_cols  <- c("taxonomy", "genus", "Pathway")
-sample_cols <- setdiff(names(df), annot_cols)
-df[sample_cols] <- lapply(df[sample_cols], function(x) suppressWarnings(as.numeric(x)))
-is_num <- vapply(df[sample_cols], is.numeric, logical(1))
-sample_cols <- sample_cols[is_num]
 
-if (length(sample_cols) == 0) {
-  writeLines("No numeric sample columns detected. Skipping descriptive profiling.", output_file)
-  quit(save = "no", status = 0)
-}
+## Sum rows and sort by size
 
-# ---------- Row-wise max across samples ----------
-row_max <- do.call(pmax, c(df[sample_cols], list(na.rm = TRUE)))
-max_sample_idx <- apply(df[sample_cols], 1, function(x) {
-  if (all(is.na(x))) return(NA)
-  which.max(x)
-})
-max_sample <- names(df[sample_cols])[max_sample_idx]
-df$Abundance <- row_max
-df$SampleName <- max_sample
+df_sum <- df_total_pathways %>%
+  mutate(Total = rowSums(select_if(., is.numeric), na.rm = TRUE)) %>%
+  arrange(desc(Total))
 
-# ---------- Prepare final table ----------
-final_tbl <- df %>%
-  transmute(
-    Pathway = Pathway,
-    Genus = taxonomy,
-    Abundance = Abundance,
-    SampleName = sub("_Abundance$", "", SampleName)
+
+df_sum_stratified <- df_stratified %>%
+  mutate(Total = rowSums(select_if(., is.numeric), na.rm = TRUE)) %>%
+  arrange(desc(Total))
+
+# ---------- Create Sample Information Dataframe ----------
+
+# Identify sample columns (before any filtering)
+annot_cols_initial <- c("taxonomy", "genus", "Pathway")
+sample_cols_initial <- setdiff(names(df_sum), annot_cols_initial)
+
+# Calculate total abundance per sample
+total_abundance_per_sample <- colSums(df_sum[sample_cols_initial], na.rm = TRUE)
+
+# Calculate UNMAPPED/UNINTEGRATED abundance per sample
+unmapped_df <- df_sum %>% filter(Pathway %in% "UNMAPPED")
+unmapped_abundance_per_sample <- colSums(unmapped_df[sample_cols_initial], na.rm = TRUE)
+
+
+unintegrated_df <- df_sum %>% filter(Pathway %in% "UNINTEGRATED")
+unintegrated_abundance_per_sample <- colSums(unintegrated_df[sample_cols_initial], na.rm = TRUE)
+
+# Create sample information dataframe
+sample_info <- data.frame(
+  Sample = sample_cols_initial,
+  Total_Abundance_CPM = total_abundance_per_sample,
+  Unmapped_CPM = unmapped_abundance_per_sample,
+  Unmapped_Percent =
+    round((unmapped_abundance_per_sample / total_abundance_per_sample) * 100, 2),
+  Unintegrated_CPM = unintegrated_abundance_per_sample,
+  Unintegrated__Percent =
+    round((unintegrated_abundance_per_sample / total_abundance_per_sample) * 100, 2)
+)
+
+# Drop non-informative rows after keeping data
+df_clean <- df_sum %>%
+  filter(
+    !is.na(Pathway),
+    !Pathway %in% c("UNMAPPED", "UNINTEGRATED")
   )
 
-# Map ExperimentalConditions from meta using SampleName, only if exp_conditions exists
-if ("exp_conditions" %in% colnames(meta)) {
-  final_tbl$ExperimentalConditions <- meta$exp_conditions[match(final_tbl$SampleName, meta$sample)]
-}
+df_clean_stratified <- df_sum_stratified %>%
+  filter(
+    !is.na(Pathway),
+    !Pathway %in% c("UNMAPPED", "UNINTEGRATED"),
+    !taxonomy %in% "unclassified"
+  )
 
-final_tbl <- final_tbl %>%
-  filter(!is.na(Genus) | Pathway == "UNMAPPED")
 
-# Safety guard: no list-columns allowed (keeps TSV tidy)
-stopifnot(!any(vapply(final_tbl, is.list, logical(1))))
+# ---------- Add Pathway Statistics Per Sample to Sample Info ----------
+
+# Calculate pathway statistics per sample
+pathway_stats_per_sample <- data.frame(
+  Sample = sample_cols_initial,
+  Pathways_Detected = sapply(sample_cols_initial, function(col) {
+    sum(df_clean[[col]] > 0, na.rm = TRUE)
+  }),
+  Pathways_with_Genus = sapply(sample_cols_initial, function(col) {
+    # Get pathways with abundance > 0 in this sample
+    active_pathways <- df_clean_stratified[[col]] > 0
+    # Count unique pathways that are active
+    length(unique(df_clean_stratified$Pathway[active_pathways]))
+  }),
+  Unique_Genera_Detected = sapply(sample_cols_initial, function(col) {
+    active_pathways <- df_clean_stratified[[col]] > 0
+    length(unique(df_clean_stratified$genus[active_pathways]))
+  }),
+  Unique_Species_Detected = sapply(sample_cols_initial, function(col) {
+    active_pathways <- df_clean_stratified[[col]] > 0
+    length(unique(df_clean_stratified$taxonomy[active_pathways]))
+  })
+)
+
+
+
+# Merge with existing sample_info
+sample_info <- merge(sample_info, pathway_stats_per_sample, by = "Sample", all = TRUE)
+
+# Grouping by experimental conditions
+# Remove '_Abundance' suffix from Sample column before joining
+sample_info <- sample_info %>%
+  mutate(Sample_clean = sub("_Abundance$", "", Sample))
+
+# Now join using the cleaned sample name
+sample_info <- sample_info %>%
+  left_join(meta, by = c("Sample_clean" = "sample")) %>%
+  select(-Sample_clean)  # Optionally remove the helper column
+
+# Rename the columns
+colnames(sample_info) <- c(
+  "Sample",
+  "TotalAbundanceCPM",
+  "UnmappedCPM",
+  "UnmappedPercent",
+  "UnintegratedCPM",
+  "UnintegratedPercent",
+  "PathwaysDetected",
+  "PathwaysWithGenus",
+  "UniqueGeneraDetected",
+  "UniqueSpeciesDetected",
+  "ExperimentalGroup"
+)
+
+
+# ---------- Prepare final table ----------
+path_tbl <- df_clean %>%
+  transmute(
+    Pathway = Pathway,
+    #Genus = taxonomy,
+    Abundance = Total
+  )
+
+
+genus_tbl <- df_clean_stratified %>%
+  transmute(
+    Pathway = Pathway,
+    Taxonomy = taxonomy,
+    Genus = genus,
+    Abundance = Total
+  )
+
+# Group by exp_conditions
+# Join genus_tbl with meta to add experimental group and sample name info
+genus_tbl_grouped <- genus_tbl %>%
+  left_join(meta, by = character())
+
+
+
+# # Safety guard: no list-columns allowed (keeps TSV tidy)
+# stopifnot(!any(vapply(final_tbl, is.list, logical(1)))). ### What is this???
+
+
+#############
+# Genus here has 3565, should we cut at all? Or do we want to output full table?
+
+#############
+
+# Show which genera are driving which pathways
+# Grouped by Genus and exp_conditions
+genus_pathway_summary <- genus_tbl_grouped %>%
+  group_by(Genus, exp_conditions) %>%
+  summarise(
+    Pathway_Count = length(unique(Pathway)),
+    Total_Abundance = sum(Abundance),
+    Percentage_of_Classified_Pathways = round((Total_Abundance / sum(genus_tbl$Abundance)) * 100, 2),
+    Top_Pathway = Pathway[which.max(Abundance)],
+    .groups = "drop"
+  ) %>%
+  arrange(exp_conditions, desc(Total_Abundance))
+
+# rename columns
+  colnames(genus_pathway_summary) <- c("Genus", "ExperimentalGroup", "PathwayCount",
+                                     "TotalAbundance", "Percentage of Classified Pathways",
+                                     "TopPathways")
+
+
+
+#############
+## Need to rename these headers too
+
+
 
 # ---------- Write ----------
-write.table(final_tbl, output_file, sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(path_tbl, output_file1, sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(sample_info, output_file2, sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(genus_tbl, output_file3, sep = "\t", row.names = FALSE, quote = FALSE)
+write.table(genus_pathway_summary, output_file4, sep = "\t", row.names = FALSE, quote = FALSE)

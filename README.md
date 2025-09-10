@@ -12,10 +12,9 @@ This is a scalable and reproducible pipeline, built in [Nextflow](https://www.ne
 
 ![](images/pipeline.png)
 
-## Installation
-
 > [!NOTE]
 > If you are new to Nextflow, please refer to the [this page](https://nextflow.io/docs/latest/install.html) on how to set-up Nextflow.
+> Please, refer to ![this page](docs/wiki.md) for more detailed information on installation, usage & troubleshooting.
 
 ## Usage
 
@@ -46,11 +45,11 @@ nextflow main.nf --help
 
 #### Global Options
 
-| Parameter         | Default                | Description                                                                                  | Options                |
-|-------------------|------------------------|----------------------------------------------------------------------------------------------|------------------------|
-| `-profile`        | `local`                | Execution profile                                                                            | `local`, `cluster`     |
-| `--samplesheet`   | NULL                   | CSV file with sample names and paired-end FASTQ file paths (R1, R2)                          | -                      |
-| `--output`        | `${baseDir}/results`   | Output directory for results                                                                 | -                      |
+| Parameter         | Default                | Description                                                                                  | Options                                  |
+|-------------------|------------------------|----------------------------------------------------------------------------------------------|------------------------------------------|
+| `-profile`        | `local`                | Execution profile and container engine                                                       | `local`, `slurm`, `conda`, `docker`, `singularity`, `apptainer` |
+| `--samplesheet`   | NULL                   | CSV file with sample names and paired-end FASTQ file paths (R1, R2)                          | -                                        |
+| `--output`        | ``${baseDir}/results`` | Output directory for results                                                                 | -                                        |
 
 #### KneadData Parameters
 
@@ -117,25 +116,22 @@ nextflow main.nf --help
 
 ### Configuation Profiles
 
-The pipeline currently supports two execution profiles set by `-profile` option:
+The pipeline currently supports two execution profiles set by `-profile` option by `,`. The options are:
 
-- **local**: Runs the pipeline on a local machine.
+- **local**
+- **slurm**
 
-- **cluster**: Runs the pipeline on a cluster using SLURM.
+And, four execution engines:
 
-> [!NOTE]
+- **conda**
+- **docker**
+- **singularity**
+- **apptainer**
+
+> [!TIP]
 > To run the pipeline in the `cluster` profile, please configure the `conf/cluster.config` file with your cluster settings.
 > Accordingly, set the memory and time limits for each process in the `nextflow.config` file.
 
-### Helpful Nextflow Commands
-
-- The pipeline does not automatically cleans the work directory. However, in the `nextflow.config` file you can set `cleanup` directive to `true`.
-  or
-- You can optionally clean the work directory by running the following command:
-
-```bash
-nextflow clean -f
-```
 
 ## Input Files
 

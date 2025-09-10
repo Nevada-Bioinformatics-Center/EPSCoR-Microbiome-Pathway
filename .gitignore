@@ -21,6 +21,7 @@ results
 humann_genefam_dir
 humann_renorm_dir
 spacecraft_samplesheet.csv
+african_soil_samplesheet.csv
 soil_samplesheet.csv
 dag-epscor_nasa_pipeline.html
 report-epscor_nasa_pipeline.html

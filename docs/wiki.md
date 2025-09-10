@@ -482,9 +482,9 @@ Before running the pipeline, the user must select an appropriate execution profi
 > The user must select the profile i.e., the executor, the engine, and the engine toggle as per their preference by using the `-profile` flag when launching the pipeline.
 
 > [!TIP]
-> This can be done using *','* to combine the options. 
+> This can be done using `,` to combine the options. 
 > For example: 
-> `-profile slurm,containers,singularity` (HPC with Singularity containers)
+> `-profile slurm,singularity` (HPC with Singularity containers)
 > `-profile local,conda` (local with Conda)
 
 #### 1. Choose an Executor Profile
@@ -496,13 +496,9 @@ The pipeline supports two executor profiles:
 
 #### 2. Choose an Environment Engine
 
-The user must also specify how software dependencies are managed. There are two main options:
+The user must also specify how software dependencies are managed by selecting an engine toggle. Currently, there are four main options:
 
 - **conda**: Uses separate Conda environments for each process (recommended for local runs or as a backup when containers fail).
-- **containers**: Uses separate container images for reproducibility.
-
-When selecting `containers`, the user must choose a container engine toggle. There are three options:
-
 - **docker**: For Docker containers.
 - **singularity**: For Singularity containers (recommended for most HPCs).
 - **apptainer**: For Apptainer containers (alternative to Singularity).
@@ -526,6 +522,12 @@ To do this:
 
 ```bash
 nextflow run main.nf -resume
+```
+
+- By default, when using container options (docker, singularity, or apptainer), R code is executed within the respective container. The user may choose to execute the code from the GitHub branch instead by using the `--dev` option.
+
+```bash
+nextflow run main.nf -profile local,docker --dev
 ```
 
 - The pipeline will not automatically delete the work directory. The user may choose to either keep the directory and clean the cache by the following command:

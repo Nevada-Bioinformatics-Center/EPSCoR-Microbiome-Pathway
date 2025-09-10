@@ -33,11 +33,11 @@ if ("exp_conditions" %in% colnames(metaData) && length(unique(metaData$exp_condi
 # ---------- Load merged Metaphlan file ---------- #
 # NOTE: Use merge_metaphlan_tables.py to generate merged_taxa_file before running this script
 # Example: python merge_metaphlan_tables.py *_profile.tsv > merged_abundance_table.tsv
-tse <- mia::importMetaPhlAn(merged_taxa_file)
+tse <- mia::importMetaPhlAn(merged_taxa_file, assay.type = "metaphlan")
 
-# 'assasy.type' is set to default - "counts"
+# 'assasy.type' is set to default - "metaphlan"
 # To find assay.type, run assayName(tse) in the console
-phylo <- mia::convertToPhyloseq(tse, assay.type = "counts")
+phylo <- mia::convertToPhyloseq(tse, assay.type = "metaphlan")
 
 # Add metadata to phyloseq object
 sample_data(phylo) <- metaData

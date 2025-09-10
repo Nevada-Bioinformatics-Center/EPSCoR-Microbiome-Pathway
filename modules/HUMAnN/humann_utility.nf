@@ -64,11 +64,14 @@ process DESCRIPTIVE_PROFILING {
         path(samplesheet)
     
     output:
-        path("top_path_taxa_results.tsv"), emit: top_taxa
+        path("pathways.tsv"), emit: pathway_table
+        path("sample_statistics.tsv"), emit: sample_stats
+        path("pathways_by_genus.tsv"), emit: pathways_by_genus
+        path("genus_statistics.tsv"), emit: genus_stats
     
     script:
     """
-    ${task.ext.script_path} ${joined_pathabundance} top_path_taxa_results.tsv ${samplesheet}
+    ${task.ext.script_path} ${joined_pathabundance} pathways.tsv sample_statistics.tsv pathways_by_genus.tsv genus_statistics.tsv ${samplesheet}
     """
 }
 
