@@ -53,7 +53,7 @@ nextflow run main.nf \
 -profile slurm,singularity \
 --samplesheet SAMPLESHEET.csv \
 --output results \
---kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB \
+--kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB/human_genome_bowtie2 \
 --metaphlan_db /home/mypool/projects/nasa_pipeline/metaphlanDB \
 --humann_nucleotide_db /home/mypool/projects/nasa_pipeline/humannDB/chocophlan \
 --humann_protein_db /home/mypool/projects/nasa_pipeline/humannDB/uniref \

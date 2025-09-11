@@ -203,7 +203,8 @@ For example, to download the **human genome database** with Bowtie2:
 ```bash
 conda env create -f assets/kneaddata.yaml
 conda activate kneaddata
-kneaddata_database --download human_genome bowtie2 kneaddataDB
+mkdir /home/mypool/projects/nasa_pipeline/kneaddataDB
+kneaddata_database --download human_genome bowtie2 /home/mypool/projects/nasa_pipeline/kneaddataDB/human_genome_bowtie2
 ```
 
 > [!NOTE]
@@ -298,7 +299,7 @@ nextflow run main.nf \
 -profile slurm,singularity \
 --samplesheet SAMPLESHEET.csv \
 --output results \
---kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB \
+--kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB/human_genome_bowtie2 \
 --metaphlan_db /home/mypool/projects/nasa_pipeline/metaphlanDB \
 --humann_nucleotide_db /home/mypool/projects/nasa_pipeline/humannDB/chocophlan \
 --humann_protein_db /home/mypool/projects/nasa_pipeline/humannDB/uniref \
