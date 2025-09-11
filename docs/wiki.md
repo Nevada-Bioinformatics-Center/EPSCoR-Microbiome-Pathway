@@ -12,6 +12,8 @@ Welcome to the documentation for the EPSCoR Microbiome Pathway Pipeline. This wi
   - [Getting Started](#getting-started)
     - [System Requirements](#system-requirements)
     - [Installing Nextflow](#installing-nextflow)
+      - [Standalone Installation](#standalone-installation)
+      - [Conda Installation](#conda-installation)
     - [Tools and Dependencies](#tools-and-dependencies)
   - [Usage](#usage)
   - [Pipeline Steps](#pipeline-steps)
@@ -59,6 +61,8 @@ Since the pipeline is built using Nextflow, the user must install it. Nextflow i
 
 Before installing Nextflow, please ensure that **Bash** version *3.2 (or later)* and **Java** version *17 LTS* are installed on your system. Java 17 LTS is recommended for best compatibility; a newer Java version may also be compatible. If these are not present, you will need to install them. For more information, please visit: https://nextflow.io/docs/latest/install.html
 
+#### Standalone Installation
+
 It is recommended to install Nextflow using the **standalone installation method**. The following steps outline the process for installing Nextflow:
 
 **Step 1:** Download Nextflow
@@ -86,7 +90,9 @@ mv nextflow $HOME/.local/bin/
 nextflow info
 ```
 
-Alternatively, you can install Nextflow using Conda. Ensure that Conda is installed on your system; if not, follow this [installation guide](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html).
+#### Conda Installation
+
+Alternatively, you can install Nextflow using **Conda**. Ensure that Conda is installed on your system; if not, follow this [installation guide](https://conda-forge.org/download/).
 
 **Step 1:** Create and activate a new Conda environment:
 
@@ -182,12 +188,12 @@ SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
 
 > [!NOTE]
 > Before proceeding to Step 3, 4 and 5 it is recommended that the user installs KneadData, MetaPhlAn and HUMAnN in their system.
-> It is also recommended to install conda in the system from [here](https://docs.conda.io/en/latest/miniconda.html)
+> It is also recommended to install conda in the system from [here](https://conda-forge.org/download/)
 
 **Step 3:** Download or provide a database for host sequence removal. The recommended approach is to use a pre-built database from KneadData. To download a database, run:
 
 ```bash
-conda env create -f assets/metaphlan.yaml
+conda env create -f assets/kneaddata.yaml
 conda activate kneaddata
 kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
 ```
@@ -197,7 +203,7 @@ For example, to download the **human genome database** with Bowtie2:
 ```bash
 conda env create -f assets/kneaddata.yaml
 conda activate kneaddata
-kneaddata_database --download human_genome bowtie2 kneadDataDB
+kneaddata_database --download human_genome bowtie2 kneaddataDB
 ```
 
 > [!NOTE]
@@ -226,7 +232,7 @@ For example, to download the `mpa_vJun23_CHOCOPhlAnSGB_202403` database:
 ```bash
 conda env create -f assets/metaphlan.yaml
 conda activate metaphlan
-metaphlan --install --index mpa_vJun23_CHOCOPhlAnSGB_202403 --bowtie2db metphlanDB
+metaphlan --install --index mpa_vJun23_CHOCOPhlAnSGB_202403 --bowtie2db /home/mypool/projects/nasa_pipeline/metaphlanDB
 ```
 
 Alternatively, the user may download the database from the [Segata Lab FTP site](https://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D). When downloading from the FTP site, please ensure to untar the files.
@@ -251,12 +257,18 @@ To list all available databases:
 humann_databases --available
 ```
 
-For example, to download the **ChocoPhlAn** nucleotide database:
+For example, to download the **ChocoPhlAn** and **Uniref90** databases:
 
 ```bash
 conda env create -f assets/humann.yaml
 conda activate humann
-humann_databases --download chocophlan full humann_nucDB
+humann_databases --download chocophlan full /home/mypool/projects/nasa_pipeline/humannDB/
+```
+
+```bash
+conda env create -f assets/humann.yaml
+conda activate humann
+humann_databases --download uniref uniref90_diamond /home/mypool/projects/nasa_pipeline/humannDB/
 ```
 
 > [!TIP]
@@ -278,6 +290,22 @@ nextflow main.nf \\
 --humann_pathway_db <PATHWAY_DB> \\
 --goterm_db <PATH-to-folder-GOTerm_database
 -resume
+```
+
+For the impatient user:
+```bash
+nextflow run main.nf \
+-profile slurm,singularity \
+--samplesheet SAMPLESHEET.csv \
+--output results \
+--kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB \
+--metaphlan_db /home/mypool/projects/nasa_pipeline/metaphlanDB \
+--humann_nucleotide_db /home/mypool/projects/nasa_pipeline/humannDB/chocophlan \
+--humann_protein_db /home/mypool/projects/nasa_pipeline/humannDB/uniref \
+--humann_pathway_db metacyc \
+--goterm_db /home/mypool/projects/nasa_pipeline/gotermsDB \
+--metaphlan_extra_analysis true \
+--dev -resume
 ```
 
 ## Pipeline Steps
@@ -620,7 +648,7 @@ nextflow run main.nf -resume
 > [!NOTE]
 > Pipeline-specific parameters use double dashes (e.g., `--samplesheet`), while Nextflow options use a single dash (e.g., `-profile`).
 
-- By default, when using container options (docker, singularity, or apptainer), R code is executed within the respective container. The user may choose to execute the code from the GitHub branch instead by using the `--dev` option.
+- By default, when using container options (`docker`, `singularity`, or `apptainer`), all R code is executed within the respective container environment. If you wish to run the R code directly from the local GitHub branch (for development or debugging), add the `--dev` flag to your pipeline command.
 
 ```bash
 nextflow run main.nf -profile local,docker --dev

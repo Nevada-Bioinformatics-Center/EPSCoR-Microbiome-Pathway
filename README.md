@@ -2,6 +2,8 @@
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
+[![run with docker](https://img.shields.io/badge/run%20with-docker-2496ED?labelColor=000000&logo=docker)](https://docs.docker.com/get-docker/)
+[![run with singularity](https://img.shields.io/badge/run%20with-singularity-1F1F1F?labelColor=000000&logo=singularity)](https://sylabs.io/guides/)
 
 
 ## Introduction
@@ -51,12 +53,12 @@ nextflow run main.nf \
 -profile slurm,singularity \
 --samplesheet SAMPLESHEET.csv \
 --output results \
---kneaddata_db ~/mypool/projects/nasa_pipeline/kneaddataDB/human_genome_bowtie2 \
---metaphlan_db ~/mypool/projects/nasa_pipeline/metaphlanDB \
---humann_nucleotide_db ~/mypool/projects/nasa_pipeline/humannDB/chocophlan \
---humann_protein_db ~/mypool/projects/nasa_pipeline/humannDB/uniref \
+--kneaddata_db /home/mypool/projects/nasa_pipeline/kneaddataDB \
+--metaphlan_db /home/mypool/projects/nasa_pipeline/metaphlanDB \
+--humann_nucleotide_db /home/mypool/projects/nasa_pipeline/humannDB/chocophlan \
+--humann_protein_db /home/mypool/projects/nasa_pipeline/humannDB/uniref \
 --humann_pathway_db metacyc \
---goterm_db /mypool/projects/nasa_pipeline/gotermsDB \
+--goterm_db /home/mypool/projects/nasa_pipeline/gotermsDB \
 --metaphlan_extra_analysis true \
 --dev -resume
 ```
@@ -70,6 +72,10 @@ nextflow run main.nf \
 | `-profile`        | `local`                | Execution profile and container engine                                                       | `local`, `slurm`, `conda`, `docker`, `singularity`, `apptainer` |
 | `--samplesheet`   | NULL                   | CSV file with sample names and paired-end FASTQ file paths (R1, R2)                          | -                                        |
 | `--output`        | ``${baseDir}/results`` | Output directory for results                                                                 | -                                        |
+| `--dev`           | -                      | Run R code directly from the local GitHub branch instead of within the container (for development or debugging; recommended only if you are modifying or testing pipeline R scripts) | -                                        |
+
+> [!NOTE]
+> By default, when using container options (`docker`, `singularity`, or `apptainer`), all R code is executed within the respective container environment. If you wish to run the R code directly from the local GitHub branch (for development or debugging), add the `--dev` flag to your pipeline command. This is useful because some parts of the pipeline are still in development.
 
 #### KneadData Parameters
 
