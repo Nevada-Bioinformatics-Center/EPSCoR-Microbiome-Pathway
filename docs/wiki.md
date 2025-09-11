@@ -57,9 +57,9 @@ Since the pipeline is built using Nextflow, the user must install it. Nextflow i
 
 ### Installing Nextflow
 
-Before installing Nextflow, please ensure that **Bash** version *3.2 (or later)* and **Java** version *17 (or later, up to 24)* are installed on your system. If these are not present, you will need to install them.
+Before installing Nextflow, please ensure that **Bash** version *3.2 (or later)* and **Java** version *17 LTS* are installed on your system. Java 17 LTS is recommended for best compatibility; a newer Java version may also be compatible. If these are not present, you will need to install them. For more information, please visit: https://nextflow.io/docs/latest/install.html
 
-It is recommended to install Nextflow using the self-installing package distribution mode; however, users can also opt for installation via conda mode or as a standalone distribution. The following steps outline the process for installing Nextflow as a self-installing package:
+It is recommended to install Nextflow using the **standalone installation method**. The following steps outline the process for installing Nextflow:
 
 **Step 1:** Download Nextflow
 
@@ -86,7 +86,38 @@ mv nextflow $HOME/.local/bin/
 nextflow info
 ```
 
-The pipeline utilizes **25.04.6 build 5954**. For more information, please visit: https://nextflow.io/docs/latest/install.html
+Alternatively, you can install Nextflow using Conda. Ensure that Conda is installed on your system; if not, follow this [installation guide](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html).
+
+**Step 1:** Create and activate a new Conda environment:
+
+```bash
+conda create --name nextflow_env
+conda activate nextflow_env
+```
+
+**Step 2:** Add the required channels and set channel priority:
+
+```bash
+conda config --add channels bioconda
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+```
+
+**Step 3:** Install Nextflow:
+
+```bash
+conda install nextflow
+```
+
+**Step 4:** Verify the installation:
+
+```bash
+nextflow info
+```
+
+> [!NOTE]
+> The pipeline utilizes **25.04.6 build 5954**.
+
 
 ### Tools and Dependencies
 
@@ -120,12 +151,12 @@ Currently, the pipeline incorporates the following tools and R packages:
 - RColorBrewer
 
 > [!NOTE]
-> All tools and dependencies are installed automatically by the pipleine using Conda and YAML files when running locally, and via Docker containers when executed on other platforms.
-> These files can be found in the `./assets` directory.
+> All tools and dependencies are installed automatically by the pipeline using one of the following engines: Conda, Docker, Singularity, or Apptainer.
+> The corresponding environment or container definition files are located in the `./assets` directory.
 
 ## Usage
 
-Before executing the pipeline, please follow these mandatory steps:
+Before executing the pipeline, please follow these *mandatory* steps:
 
 **Step 1:** Prepare a sample sheet in CSV format that lists the samples and their metadata. Here are two examples of the sample sheet:
 
@@ -147,27 +178,38 @@ SAMPLE2-ID,sample2_R1.fastq.gz,sample2_R2.fastq.gz
 SAMPLE3-ID,sample3_R1.fastq.gz,sample3_R2.fastq.gz
 ```
 
-**Step 2:** Paired-end FASTQ files in either `.fastq` or `.fastq.gz` format.
+**Step 2:** Provide paired-end FASTQ files in either `.fastq` or `.fastq.gz` format.
 
 > [!NOTE]
 > Before proceeding to Step 3, 4 and 5 it is recommended that the user installs KneadData, MetaPhlAn and HUMAnN in their system.
 > It is also recommended to install conda in the system from [here](https://docs.conda.io/en/latest/miniconda.html)
 
-**Step 3:** Provide a database for host sequence removal. This can be downloaded from the KneadData database by running the following commands:
+**Step 3:** Download or provide a database for host sequence removal. The recommended approach is to use a pre-built database from KneadData. To download a database, run:
 
 ```bash
-conda env create -f assets/kneaddata.yaml
+conda env create -f assets/metaphlan.yaml
 conda activate kneaddata
 kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
 ```
 
-To view the list of available databases, use:
+For example, to download the **human genome database** with Bowtie2:
+
+```bash
+conda env create -f assets/kneaddata.yaml
+conda activate kneaddata
+kneaddata_database --download human_genome bowtie2 kneadDataDB
+```
+
+> [!NOTE]
+> The pipeline currently supports only Bowtie2-formatted databases for host removal.
+
+To list all available databases:
 
 ```bash
 kneaddata_database --available
 ```
 
-Alternatively, the user can build/provide custom reference database. For more information, see the [KneadData documentation](https://github.com/biobakery/kneaddata)
+Alternatively, you may build or provide a custom reference database. For details, refer to the [KneadData documentation](https://github.com/biobakery/kneaddata).
 
 **Step 4:** Download the MetaPhlAn database by running the following commands:
 
@@ -177,13 +219,23 @@ conda activate metaphlan
 metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
 ```
 
-The default index is set to `mpa_vJun23_CHOCOPhlAnSGB_202403`. Alternatively, the user may download the database from the [Segata Lab FTP site](https://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D). When donwloading from the FTP site, please ensure to untar the files.
+The default index is set to `mpa_vJun23_CHOCOPhlAnSGB_202403`.
+
+For example, to download the `mpa_vJun23_CHOCOPhlAnSGB_202403` database:
+
+```bash
+conda env create -f assets/metaphlan.yaml
+conda activate metaphlan
+metaphlan --install --index mpa_vJun23_CHOCOPhlAnSGB_202403 --bowtie2db metphlanDB
+```
+
+Alternatively, the user may download the database from the [Segata Lab FTP site](https://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D). When downloading from the FTP site, please ensure to untar the files.
 
 > [!WARNING]
-> Do not use the latest MetaPhlAn database, as it is incompatible with HUMAnN 3.9.
+> Do **not** use the latest MetaPhlAn database, as it is incompatible with HUMAnN 3.9.
 > For further information, consult the [BioBakery forum](https://forum.biobakery.org).
 
-**Step 5:** Download both the HUMAnN nucleotide and protein databases using the following commands:
+**Step 5:** Download the HUMAnN nucleotide and protein databases as needed:
 
 ```bash
 conda env create -f assets/humann.yaml
@@ -191,19 +243,32 @@ conda activate humann
 humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
 ```
 
-To view all available databases, use:
+Repeat the above command for each database type (nucleotide or protein) you require.
+
+To list all available databases:
 
 ```bash
 humann_databases --available
 ```
 
-For more information, please review the [HUMAnN documentation](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases).
+For example, to download the **ChocoPhlAn** nucleotide database:
+
+```bash
+conda env create -f assets/humann.yaml
+conda activate humann
+humann_databases --download chocophlan full humann_nucDB
+```
+
+> [!TIP]
+> When specifying database paths in the pipeline command, use the full path to the subdirectory containing the actual database files (e.g., `humann_nucDB/chocophlan` for nucleotide, or the corresponding subdirectory for protein).
+
+For more details, see the [HUMAnN documentation](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases).
 
 **Step 6:** Finally, execute the pipeline using the following command:
 
 ```bash
 nextflow main.nf \\
--profile <PROFILE> \\
+-profile <EXECUTOR-PROFILE>,<ENGING-TOGGLE> \\
 --samplesheet <PATH-to-INPUT.csv> \\
 --output <PATH-to-OUTPUT_DIR> \\
 --kneaddata_db <PATH-to-folder-KneadData_database> \\
@@ -211,7 +276,8 @@ nextflow main.nf \\
 --humann_nucleotide_db <PATH-to-folder-HUMAnN_nucleotide_database> \\
 --humann_protein_db <PATH-to-folder-HUMAnN_protein_database> \\
 --humann_pathway_db <PATHWAY_DB> \\
---go_term_db <PATH-to-folder-GOTerm_database
+--goterm_db <PATH-to-folder-GOTerm_database
+-resume
 ```
 
 ## Pipeline Steps
@@ -242,7 +308,34 @@ The Kneading Data process performs comprehensive quality control and host decont
 | `--kneaddata_extra`               | Additional user-specified options to pass directly to KneadData.            | (Empty)    |
 
 *Outputs:*
+**Step 5:** Download the HUMAnN nucleotide and protein databases as needed:
 
+```bash
+conda env create -f assets/humann.yaml
+conda activate humann
+humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
+```
+
+Repeat the above command for each database type (nucleotide or protein) you require.
+
+To list all available databases:
+
+```bash
+humann_databases --available
+```
+
+For example, to download the **ChocoPhlAn** nucleotide database:
+
+```bash
+conda env create -f assets/humann.yaml
+conda activate humann
+humann_databases --download chocophlan full humann_nucDB
+```
+
+> [!TIP]
+> When specifying database paths in the pipeline command, use the full path to the subdirectory containing the actual database files (e.g., `humann_nucDB/chocophlan` for nucleotide, or the corresponding subdirectory for protein).
+
+For more details, see the [HUMAnN documentation](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases).
 - `${sample}.fastq.gz` : Host-depleted, quality-controlled FASTQ file for each sample.
 - `${sample_id}_kneaddata.log` : Detailed logs for each run.
 - `.html` and `.zip` reports for processed reads, generated by FastQC after KneadData processing.
@@ -523,6 +616,9 @@ To do this:
 ```bash
 nextflow run main.nf -resume
 ```
+
+> [!NOTE]
+> Pipeline-specific parameters use double dashes (e.g., `--samplesheet`), while Nextflow options use a single dash (e.g., `-profile`).
 
 - By default, when using container options (docker, singularity, or apptainer), R code is executed within the respective container. The user may choose to execute the code from the GitHub branch instead by using the `--dev` option.
 

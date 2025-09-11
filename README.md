@@ -12,33 +12,53 @@ This is a scalable and reproducible pipeline, built in [Nextflow](https://www.ne
 
 ![](images/pipeline.png)
 
+## Usage
+
+> [!TIP]
+> For detailed information on installation, usage, outputs & troubleshooting, please refer to the [wiki document](docs/wiki.md).
+
 > [!NOTE]
 > If you are new to Nextflow, please refer to the [this page](https://nextflow.io/docs/latest/install.html) on how to set-up Nextflow.
-> Please, refer to ![this page](docs/wiki.md) for more detailed information on installation, usage & troubleshooting.
-
-## Usage
 
 ### Basic Usage
 
-1. Run the command below to execute the pipeline:
+Run the command below to execute the pipeline:
 
-  ```bash
-nextflow main.nf \\
-            -profile <PROFILE> \\
-            --samplesheet path/to/INPUT.csv \\
-            --output /path/to/OUTPUT_DIR \\
-            --kneaddata_db /path/to/folder/kneaddata/database/download/ \\
-            --metaphlan_db /path/to/folder/metaphlan/database/download \\
-            --humann_nucleotide_db /path/to/folder/humann/nucleotide/databases/download \\
-            --humann_protein_db /path/to/folder/humann/protein/databases/download \\
-            --humann_pathway_db <PATHWAY_DB> \\
-            --go_term_db /path/to/folder/go-term/database/download
+```bash
+nextflow run main.nf \
+-profile <EXECUTION-PROFILE>,<ENGINE-TOGGLE> \
+--samplesheet path/to/INPUT.csv \
+--output /path/to/OUTPUT_DIR \
+--kneaddata_db /path/to/folder/kneaddata/database/download/ \
+--metaphlan_db /path/to/folder/metaphlan/database/download \
+--humann_nucleotide_db /path/to/folder/humann/nucleotide/databases/download \
+--humann_protein_db /path/to/folder/humann/protein/databases/download \
+--humann_pathway_db <PATHWAY_DB> \
+--goterm_db /path/to/folder/go-term/database/download \
+-resume
 ```
 
-For help on the available parameters, run the command below:
+For help on the available pipeline parameters, run the command below:
 
 ```bash
 nextflow main.nf --help
+```
+
+For the impatient, real usage:
+
+```bash
+nextflow run main.nf \
+-profile slurm,singularity \
+--samplesheet SAMPLESHEET.csv \
+--output results \
+--kneaddata_db ~/mypool/projects/nasa_pipeline/kneaddataDB/human_genome_bowtie2 \
+--metaphlan_db ~/mypool/projects/nasa_pipeline/metaphlanDB \
+--humann_nucleotide_db ~/mypool/projects/nasa_pipeline/humannDB/chocophlan \
+--humann_protein_db ~/mypool/projects/nasa_pipeline/humannDB/uniref \
+--humann_pathway_db metacyc \
+--goterm_db /mypool/projects/nasa_pipeline/gotermsDB \
+--metaphlan_extra_analysis true \
+--dev -resume
 ```
 
 ### Parameters
@@ -159,52 +179,7 @@ And, four execution engines:
 
 **Step 2:** Provide **Paired-end FASTQ files** in `.fastq.gz` or `.fastq` format.
 
-**Step 3:** Download **KneadData Database** by running the following command
-
-```bash
-    kneaddata_database --download <DATABASE> <BUILD> <DATABASE_FOLDER>
-```
-
-To view the list of available databases:
-
-```bash
-    kneaddata_database --available
-```
-
-Alternatively, you can also build your own custom reference database. See [KneadData README](https://github.com/biobakery/kneaddata) for more information.
-
-> [!NOTE]
-> Only Bowtie2-generated databases are supported.
-
-**Step 4:** Download **MetaPhlAn Database** by the following command
-
-```bash
-    metaphlan --install --index <INDEX> --bowtie2db <DATABASE_FOLDER>
-```
-
-Presently, the default index has been set to `mpa_vJun23_CHOCOPhlAnSGB_202403`. 
-
-Alternatively, you can also download from [Segata Lab FTP](http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/?C=M;O=D). If following this, please do untar the file.
-
-> [!CAUTION]
-> Do **not** use the latest MetaPhlAn database; it is incompatible with HUMAnN 3.9. 
-> For more information please consult the [BioBakery forum](https://forum.biobakery.org/)
-
-For more information please see [MetaPhlAn README](https://github.com/biobakery/MetaPhlAn/wiki/MetaPhlAn-4.1).
-
-**Step 5:** Download both **HUMAnN Nucleotide and Protein Databases** by the following command
-
-```bash
-    humann_databases --download <DATABASE> <BUILD> <DIRECTORY>
-```
-
-To view the available databases:
-
-```bash
-    humann_databases --available
-```
-
-For more information, please review [HUMAnN README](https://github.com/biobakery/humann?tab=readme-ov-file#5-download-the-databases)
+Please refer to the [wiki document](docs/wiki.md) for **Step 3**, **Step 4**, and **Step 5**. These steps guide you through downloading or providing the required **KneadData Database**, **MetaPhlAn Database**, and **HUMAnN Nucleotide and Protein Databases**.
 
 ## Output
 
